@@ -1,0 +1,109 @@
+[
+  { 
+    "id": 0, "type": "LESSON", "icon": "🔋", "title": "1.1 电源基础与稳压选型", 
+    "questions": ["Q200003","Q200002","Q200001","Q100001","Q1", "Q2", "Q4", "Q5", "Q10", "Q59"] 
+  },
+  { 
+    "id": 1, "type": "LESSON", "icon": "🔋", "title": "1.2 去耦网络与噪声隔离", 
+    "questions": ["Q3", "Q7", "Q51", "Q73", "Q92", "Q97"] 
+  },
+  { 
+    "id": 2, "type": "LESSON", "icon": "🔋", "title": "1.3 极性陷阱与上电时序", 
+    "questions": ["Q6", "Q8", "Q9", "Q57", "Q62", "Q63", "Q87"] 
+  },
+  { 
+    "id": 3, "type": "CHEST", "icon": "🎁", "title": "新手破冰补给箱", 
+    "rewardXP": 100 
+  },
+  { 
+    "id": 4, "type": "LESSON", "icon": "🔄", "title": "2.1 复位原理与基础", 
+    "questions": ["Q11", "Q13", "Q14", "Q15", "Q16"] 
+  },
+  { 
+    "id": 5, "type": "LESSON", "icon": "🔄", "title": "2.2 电路改进与异常防护", 
+    "questions": ["Q12", "Q17", "Q18", "Q60", "Q85"] 
+  },
+  { 
+    "id": 6, "type": "LESSON", "icon": "🔄", "title": "2.3 不稳定复位排查", 
+    "questions": ["Q19", "Q20", "Q52", "Q90"] 
+  },
+  { 
+    "id": 7, "type": "CHEST", "icon": "🎁", "title": "状态重置补给箱", 
+    "rewardXP": 150 
+  },
+  { 
+    "id": 8, "type": "LESSON", "icon": "⏱️", "title": "3.1 振荡器结构与选型", 
+    "questions": ["Q21", "Q22", "Q27", "Q29", "Q71"] 
+  },
+  { 
+    "id": 9, "type": "LESSON", "icon": "⏱️", "title": "3.2 匹配电容与测不准", 
+    "questions": ["Q23", "Q24", "Q25", "Q26", "Q28", "Q53", "Q84"] 
+  },
+  { 
+    "id": 10, "type": "LESSON", "icon": "⏱️", "title": "3.3 布局布线与信号完整", 
+    "questions": ["Q30", "Q61", "Q64", "Q69", "Q89", "Q93", "Q94", "Q95"] 
+  },
+  { 
+    "id": 11, "type": "CHEST", "icon": "🎁", "title": "时钟节拍补给箱", 
+    "rewardXP": 200 
+  },
+  { 
+    "id": 12, "type": "LESSON", "icon": "🔌", "title": "4.1 启动模式与电平钳位", 
+    "questions": ["Q31", "Q32", "Q33", "Q34", "Q37", "Q38", "Q65"] 
+  },
+  { 
+    "id": 13, "type": "LESSON", "icon": "🔌", "title": "4.2 引脚复用与电路冲突", 
+    "questions": ["Q35", "Q36", "Q39", "Q40", "Q54", "Q72", "Q88", "Q98"] 
+  },
+  { 
+    "id": 14, "type": "LESSON", "icon": "🔌", "title": "4.3 外设总线与 I/O 极限", 
+    "questions": ["Q66", "Q68", "Q74", "Q86", "Q99"] 
+  },
+  { 
+    "id": 15, "type": "CHEST", "icon": "🎁", "title": "引脚边界补给箱", 
+    "rewardXP": 250 
+  },
+  { 
+    "id": 16, "type": "LESSON", "icon": "🐛", "title": "5.1 烧录接口与安全锁", 
+    "questions": ["Q41", "Q42", "Q43", "Q48", "Q55", "Q58", "Q91"] 
+  },
+  { 
+    "id": 17, "type": "LESSON", "icon": "🐛", "title": "5.2 中断死锁与看门狗", 
+    "questions": ["Q46", "Q47", "Q67", "Q70", "Q96"] 
+  },
+  { 
+    "id": 18, "type": "CHEST", "icon": "🎁", "title": "固件除虫补给箱", 
+    "rewardXP": 300 
+  },
+  { 
+    "id": 19, "type": "LESSON", "icon": "🧮", "title": "6.1 电容正逆向推导", 
+    "questions": ["Q76", "Q77", "Q78"] 
+  },
+  { 
+    "id": 20, "type": "LESSON", "icon": "🧮", "title": "6.2 RC 充放电与复位", 
+    "questions": ["Q79", "Q80", "Q81"] 
+  },
+  { 
+    "id": 21, "type": "LESSON", "icon": "🧮", "title": "6.3 功耗转化与结温评估", 
+    "questions": ["Q82", "Q83"] 
+  },
+  { 
+    "id": 22, "type": "CHEST", "icon": "💎", "title": "硬核计算大宝箱", 
+    "rewardXP": 500 
+  },
+  { 
+    "id": 23, "type": "LESSON", "icon": "💀", "title": "7.1 软件崩溃的硬件投影", 
+    "questions": ["Q44", "Q45", "Q49", "Q56"] 
+  },
+  { 
+    "id": 24, "type": "LESSON", "icon": "💀", "title": "7.2 系统级急救兵法", 
+    "questions": ["Q50", "Q75", "Q100"] 
+  },
+  { 
+    "id": 25, "type": "CHEST", "icon": "🏆", "title": "硬件大宗师奖杯", 
+    "rewardXP": 1500 
+  },
+  { 
+    "id": 26, "type": "LOCKED", "icon": "👑", "title": "第二卷：敬请期待..." 
+  }
+]

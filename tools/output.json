@@ -1,0 +1,36 @@
+[
+  {
+    "id": "HQ_1",
+    "type": "MCQ",
+    "topic": "Power_System",
+    "prompt": "现代单片机内部通常有多个电压域，其中 Vcore（内核电压）的主要作用是？",
+    "options": [
+      "A. 为外部引脚提供高电平驱动能力",
+      "B. 为内部 CPU 内核及 SRAM 供电，降低动态功耗",
+      "C. 为内部 ADC 和 DAC 提供高精度参考电压",
+      "D. 专门为内部看门狗定时器供电"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": "HQ_2",
+    "type": "MCQ",
+    "topic": "Power_System",
+    "prompt": "测试电源瞬态响应和上电爬升波形，应该使用的最佳仪器是？",
+    "options": [
+      "A. 6 位半高精度万用表",
+      "B. 频谱分析仪",
+      "C. 逻辑分析仪",
+      "D. 示波器（直流耦合，配合边沿触发模式）"
+    ],
+    "answer": "D"
+  },
+  {
+    "id": "HQ_3",
+    "type": "MATH",
+    "topic": "Circuit_Basics",
+    "prompt": "已知电阻 R = 10kΩ，电容 C = 1μF。一阶 RC 电路的时间常数 τ (Tau) 的计算公式是什么？（请用 R 和 C 表示）",
+    "options": [],
+    "answer": "\\tau=R\\cdot C"
+  }
+]

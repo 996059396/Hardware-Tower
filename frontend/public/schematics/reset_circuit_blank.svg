@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%" style="background-color: #1e1e1e;">
+  <rect x="550" y="100" width="200" height="400" fill="#2a2a2a" stroke="#fff" stroke-width="4"/>
+  <text x="650" y="300" fill="#fff" font-size="32" font-family="Arial" font-weight="bold" text-anchor="middle">STM32</text>
+  
+  <line x1="500" y1="200" x2="550" y2="200" stroke="#fff" stroke-width="4"/>
+  <text x="560" y="208" fill="#fff" font-size="20" font-family="Arial">NRST</text>
+  <line x1="500" y1="400" x2="550" y2="400" stroke="#fff" stroke-width="4"/>
+  <text x="560" y="408" fill="#fff" font-size="20" font-family="Arial">GND</text>
+
+  <line x1="200" y1="100" x2="400" y2="100" stroke="#ff4b4b" stroke-width="4"/>
+  <text x="150" y="108" fill="#ff4b4b" font-size="24" font-family="Arial" font-weight="bold">VDD 3.3V</text>
+  
+  <line x1="200" y1="500" x2="400" y2="500" stroke="#1cb0f6" stroke-width="4"/>
+  <text x="150" y="508" fill="#1cb0f6" font-size="24" font-family="Arial" font-weight="bold">GND</text>
+
+  <line x1="400" y1="100" x2="400" y2="150" stroke="#fff" stroke-width="4"/>
+  <line x1="400" y1="250" x2="400" y2="400" stroke="#fff" stroke-width="4"/>
+  <line x1="400" y1="450" x2="400" y2="500" stroke="#fff" stroke-width="4"/>
+
+  <line x1="400" y1="200" x2="500" y2="200" stroke="#fff" stroke-width="4"/>
+  <circle cx="400" cy="200" r="6" fill="#fff"/>
+  <line x1="400" y1="400" x2="500" y2="400" stroke="#fff" stroke-width="4"/>
+  <circle cx="400" cy="400" r="6" fill="#fff"/>
+</svg>
