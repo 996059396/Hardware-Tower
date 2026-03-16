@@ -6,6 +6,8 @@ import { db, initPlayerStats } from './db';
 import './App.css';
 import gameData from './gameData.json';
 import { ComputeEngine } from '@cortex-js/compute-engine';
+import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 
 const ce = new ComputeEngine();
 
@@ -24,22 +26,17 @@ const playSound = (type: 'correct' | 'wrong' | 'buy' | 'chest' | 'snap' | 'wire'
   osc.connect(gainNode); gainNode.connect(ctx.destination);
   
   if (type === 'snap') {
-    osc.type = 'triangle'; osc.frequency.setValueAtTime(600, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
+    osc.type = 'triangle'; osc.frequency.setValueAtTime(600, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
     gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
   } else if (type === 'wire') {
-    osc.type = 'sine'; osc.frequency.setValueAtTime(1200, ctx.currentTime);
-    gainNode.gain.setValueAtTime(0.2, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(1200, ctx.currentTime); gainNode.gain.setValueAtTime(0.2, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
   } else if (type === 'correct') {
-    osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
     gainNode.gain.setValueAtTime(0.5, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
   } else if (type === 'wrong') {
-    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, ctx.currentTime);
-    gainNode.gain.setValueAtTime(0.5, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, ctx.currentTime); gainNode.gain.setValueAtTime(0.5, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
   } else if (type === 'buy' || type === 'chest') {
-    osc.type = 'square'; osc.frequency.setValueAtTime(1200, ctx.currentTime);
-    osc.frequency.setValueAtTime(1800, ctx.currentTime + 0.1); osc.frequency.setValueAtTime(2400, ctx.currentTime + 0.2); 
+    osc.type = 'square'; osc.frequency.setValueAtTime(1200, ctx.currentTime); osc.frequency.setValueAtTime(1800, ctx.currentTime + 0.1); osc.frequency.setValueAtTime(2400, ctx.currentTime + 0.2); 
     gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
   }
   osc.start(); osc.stop(ctx.currentTime + 0.3);
@@ -50,19 +47,11 @@ const pulseAnimation = `@keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(88,
 // 🚀 EDA 引擎核心算法：并查集
 class UnionFind {
   parent: Record<string, string> = {};
-  find(i: string): string {
-    if (!this.parent[i]) this.parent[i] = i;
-    if (this.parent[i] !== i) this.parent[i] = this.find(this.parent[i]);
-    return this.parent[i];
-  }
+  find(i: string): string { if (!this.parent[i]) this.parent[i] = i; if (this.parent[i] !== i) this.parent[i] = this.find(this.parent[i]); return this.parent[i]; }
   union(i: string, j: string) { this.parent[this.find(i)] = this.find(j); }
   getNets(): string[][] {
     const nets: Record<string, Set<string>> = {};
-    for (const key of Object.keys(this.parent)) {
-      const root = this.find(key);
-      if (!nets[root]) nets[root] = new Set();
-      nets[root].add(key);
-    }
+    for (const key of Object.keys(this.parent)) { const root = this.find(key); if (!nets[root]) nets[root] = new Set(); nets[root].add(key); }
     return Object.values(nets).map(set => Array.from(set).sort());
   }
 }
@@ -79,24 +68,28 @@ function App() {
   const currentSavedLevel = progressMap[currentHash] || 0;
   const errorCount = useLiveQuery(() => db.errorBook.count()) || 0;
 
-  // -------------------------
-  // 🌐 全局状态机
-  // -------------------------
   const [currentView, setCurrentView] = useState<'menu' | 'quiz' | 'review'>('menu');
   const [activeNodeIndex, setActiveNodeIndex] = useState(0);    
   const [subQuestionIndex, setSubQuestionIndex] = useState(0);  
   
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]); 
   const [isShaking, setIsShaking] = useState(false);
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
 
   // -------------------------
-  // ☁️ 云同步与存档专属状态 (战役三：数据持久化)
+  // 📚 存档库与云同步专属状态 (战役三：数据持久化升维)
   // -------------------------
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelpDoc, setShowHelpDoc] = useState(false);
+  
+  // 从 LocalStorage 初始化存档库
+  const [saveLibrary, setSaveLibrary] = useState<any[]>(() => {
+    const lib = localStorage.getItem('ht_save_library');
+    return lib ? JSON.parse(lib) : [];
+  });
+  
   const [ghToken, setGhToken] = useState(() => localStorage.getItem('ht_github_token') || '');
   const [gistId, setGistId] = useState(() => localStorage.getItem('ht_gist_id') || '');
   const [syncStatus, setSyncStatus] = useState('');
@@ -105,58 +98,107 @@ function App() {
   const handleSaveToken = (val: string) => { setGhToken(val); localStorage.setItem('ht_github_token', val); };
   const handleSaveGist = (val: string) => { setGistId(val); localStorage.setItem('ht_gist_id', val); };
 
-  // 💾 本地导出 (生成 JSON 文件)
-  const exportLocalSave = async () => {
+  const updateLibrary = (newLib: any[]) => {
+    setSaveLibrary(newLib);
+    localStorage.setItem('ht_save_library', JSON.stringify(newLib));
+  };
+
+  // 📝 核心功能 1：将当前进度存入存档库
+  const saveCurrentToLibrary = async () => {
+    const name = prompt("请输入存档名称 (例如: 第一章打完保存)：", `存档 ${new Date().toLocaleDateString()}`);
+    if (!name) return;
+    const notes = prompt("可补充辅助信息/备注 (例如: 尝试了新接法)：", "") || "";
+
     const stats = await db.playerStats.toArray();
     const errors = await db.errorBook.toArray();
-    const saveData = {
-      _meta: { saveId: crypto.randomUUID(), timestamp: Date.now(), appVersion: "7.0" },
+    
+    const newSave = {
+      _meta: { 
+        saveId: crypto.randomUUID(), 
+        timestamp: Date.now(), 
+        appVersion: "7.1",
+        name: name,
+        notes: notes,
+        summary: `XP: ${stats[0]?.xp || 0} | 错题: ${errors.length}`
+      },
       playerStats: stats[0] || {},
       errorBook: errors
     };
-    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
+
+    updateLibrary([newSave, ...saveLibrary]);
+    alert("已成功加入存档库！");
+  };
+
+  // 🔃 核心功能 2：从存档库加载到当前游戏
+  const loadFromLibrary = async (saveObj: any) => {
+    if (!window.confirm(`确定要加载存档 [${saveObj._meta.name}] 吗？当前未保存的进度将被覆盖！`)) return;
+    if (parseFloat(saveObj._meta.appVersion) > 7.1) { alert("该存档版本过高，请先更新软件！"); return; }
+    
+    if (saveObj.playerStats) await db.playerStats.put(saveObj.playerStats);
+    if (saveObj.errorBook) {
+      await db.errorBook.clear();
+      await db.errorBook.bulkPut(saveObj.errorBook);
+    }
+    alert("存档加载成功！即将刷新页面...");
+    window.location.reload();
+  };
+
+  // 🗑️ 删除存档库中的某项
+  const deleteFromLibrary = (id: string) => {
+    if (window.confirm("确定要删除这条存档吗？")) {
+      updateLibrary(saveLibrary.filter(s => s._meta.saveId !== id));
+    }
+  };
+
+  // 💾 本地导出单体/整个库 (生成 JSON 文件)
+  const exportLibraryLocal = () => {
+    const blob = new Blob([JSON.stringify(saveLibrary, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `Hardware_Tower_Save_${new Date().getTime()}.json`;
+    const a = document.createElement('a'); a.href = url; a.download = `HW_Tower_Library_${new Date().getTime()}.json`;
     a.click(); URL.revokeObjectURL(url);
   };
 
-  // 📥 本地导入 (解析 JSON 文件)
-  const importLocalSave = (event: any) => {
+  // 📥 本地导入 (解析 JSON 文件加入存档库)
+  const importLocalToLibrary = (event: any) => {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        if (data._meta && parseFloat(data._meta.appVersion) > 7.0) {
-            alert("存档版本过高，请先更新软件！"); return;
+        let importedCount = 0;
+        let newLib = [...saveLibrary];
+        
+        // 兼容单体存档和数组存档库
+        const items = Array.isArray(data) ? data : [data];
+        items.forEach(item => {
+          if (item._meta && item.playerStats) {
+             // 避免重复导入相同的 ID
+             if (!newLib.some(s => s._meta.saveId === item._meta.saveId)) {
+                newLib.push(item);
+                importedCount++;
+             }
+          }
+        });
+        
+        if (importedCount > 0) {
+          updateLibrary(newLib);
+          alert(`成功导入 ${importedCount} 个存档到库中！`);
+        } else {
+          alert("没有检测到有效或新的存档格式。");
         }
-        if (data.playerStats) await db.playerStats.put(data.playerStats);
-        if (data.errorBook) {
-          await db.errorBook.clear();
-          await db.errorBook.bulkPut(data.errorBook);
-        }
-        alert("🎉 本地存档导入成功！");
-        window.location.reload();
       } catch (err) { alert("❌ 存档文件损坏或格式错误！"); }
     };
     reader.readAsText(file);
+    // 重置 input，方便下次导入同名文件
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // ⬆️ 推送到 GitHub Gist
-  const pushToCloud = async () => {
-    if (!ghToken) return alert("请先填写 GitHub Personal Access Token");
-    setSyncStatus('🔄 正在打包推送到云端...');
+  // ⬆️ 将整个存档库推送到 GitHub Gist
+  const pushLibraryToCloud = async () => {
+    if (!ghToken) return alert("请先填写 GitHub Token");
+    setSyncStatus('🔄 正在打包整个存档库推送到云端...');
     try {
-      const stats = await db.playerStats.toArray();
-      const errors = await db.errorBook.toArray();
-      const saveData = {
-        _meta: { saveId: crypto.randomUUID(), timestamp: Date.now(), appVersion: "7.0" },
-        playerStats: stats[0] || {},
-        errorBook: errors
-      };
-
       let method = gistId ? 'PATCH' : 'POST';
       let url = gistId ? `https://api.github.com/gists/${gistId}` : `https://api.github.com/gists`;
 
@@ -164,53 +206,53 @@ function App() {
         method,
         headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' },
         body: JSON.stringify({
-          description: "Hardware Tower Save Data (Do not delete)",
+          description: "Hardware Tower Save Library (Do not delete)",
           public: false,
-          files: { "hardware_tower_save.json": { content: JSON.stringify(saveData, null, 2) } }
+          files: { "ht_save_library.json": { content: JSON.stringify(saveLibrary, null, 2) } }
         })
       });
 
       if (!response.ok) throw new Error("Sync failed");
       const resData = await response.json();
+      if (!gistId) handleSaveGist(resData.id);
       
-      if (!gistId) {
-        handleSaveGist(resData.id); // 首次创建，保存新生成的 Gist ID
-      }
-      setSyncStatus('✅ 成功覆盖云端存档！');
-      setTimeout(() => setSyncStatus(''), 3000);
+      setSyncStatus(`✅ 成功将 ${saveLibrary.length} 个存档同步至云端！`);
+      setTimeout(() => setSyncStatus(''), 4000);
     } catch (err) {
-      console.error(err);
-      setSyncStatus('❌ 同步失败，请检查 Token 权限或网络。');
+      console.error(err); setSyncStatus('❌ 同步失败，请检查 Token 权限或网络。');
     }
   };
 
-  // ⬇️ 从 GitHub Gist 拉取
-  const pullFromCloud = async () => {
-    if (!ghToken || !gistId) return alert("请填写 Token 和 Gist ID 才能拉取");
-    setSyncStatus('🔄 正在从云端拉取数据...');
+  // ⬇️ 从 GitHub Gist 拉取并合并到存档库
+  const pullLibraryFromCloud = async () => {
+    if (!ghToken || !gistId) return alert("请填写 Token 和 Gist ID");
+    setSyncStatus('🔄 正在拉取云端存档库...');
     try {
-      const response = await fetch(`https://api.github.com/gists/${gistId}`, {
-        headers: { 'Authorization': `token ${ghToken}` }
-      });
+      const response = await fetch(`https://api.github.com/gists/${gistId}`, { headers: { 'Authorization': `token ${ghToken}` } });
       if (!response.ok) throw new Error("Pull failed");
       
       const gist = await response.json();
-      const content = gist.files["hardware_tower_save.json"].content;
-      const data = JSON.parse(content);
+      const content = gist.files["ht_save_library.json"].content;
+      const cloudLib = JSON.parse(content);
 
-      if (data._meta && parseFloat(data._meta.appVersion) > 7.0) {
-          alert("云端存档版本过高，请先更新本地软件！"); setSyncStatus(''); return;
-      }
-      if (data.playerStats) await db.playerStats.put(data.playerStats);
-      if (data.errorBook) {
-        await db.errorBook.clear();
-        await db.errorBook.bulkPut(data.errorBook);
-      }
-      setSyncStatus('✅ 云端数据覆盖成功！即将刷新...');
-      setTimeout(() => window.location.reload(), 1000);
+      if (!Array.isArray(cloudLib)) throw new Error("Invalid cloud library format");
+
+      // 智能合并：保留本地最新的同名存档，加入云端独有的存档
+      let newLib = [...saveLibrary];
+      let added = 0;
+      cloudLib.forEach(cloudSave => {
+        const existingIndex = newLib.findIndex(s => s._meta.saveId === cloudSave._meta.saveId);
+        if (existingIndex === -1) { newLib.push(cloudSave); added++; } 
+        else if (cloudSave._meta.timestamp > newLib[existingIndex]._meta.timestamp) {
+          newLib[existingIndex] = cloudSave; // 云端更新，覆盖本地同ID存档
+        }
+      });
+      
+      updateLibrary(newLib);
+      setSyncStatus(`✅ 云端拉取完成！合并了 ${added} 个新存档。`);
+      setTimeout(() => setSyncStatus(''), 4000);
     } catch (err) {
-      console.error(err);
-      setSyncStatus('❌ 拉取失败，确保 Gist ID 正确且包含合法存档。');
+      console.error(err); setSyncStatus('❌ 拉取失败，请检查 Gist ID 或网络。');
     }
   };
 
@@ -232,35 +274,15 @@ function App() {
 
   const commitToHistory = (newComps: any, newWires: any) => {
     const currentRecord = history[historyStep];
-    if (JSON.stringify(currentRecord.comps) === JSON.stringify(newComps) && 
-        JSON.stringify(currentRecord.wires) === JSON.stringify(newWires)) return; 
-    
+    if (JSON.stringify(currentRecord.comps) === JSON.stringify(newComps) && JSON.stringify(currentRecord.wires) === JSON.stringify(newWires)) return; 
     const newRecord = { comps: JSON.parse(JSON.stringify(newComps)), wires: JSON.parse(JSON.stringify(newWires)) };
-    setHistory(prev => {
-      const nextHistory = prev.slice(0, historyStep + 1);
-      nextHistory.push(newRecord);
-      return nextHistory;
-    });
+    setHistory(prev => { const nextHistory = prev.slice(0, historyStep + 1); nextHistory.push(newRecord); return nextHistory; });
     setHistoryStep(prev => prev + 1);
   };
 
-  const handleUndo = () => {
-    if (historyStep > 0) {
-      const step = historyStep - 1; setHistoryStep(step);
-      setCanvasComps(history[step].comps); setWires(history[step].wires); playSound('snap');
-    }
-  };
+  const handleUndo = () => { if (historyStep > 0) { const step = historyStep - 1; setHistoryStep(step); setCanvasComps(history[step].comps); setWires(history[step].wires); playSound('snap'); } };
+  const handleRedo = () => { if (historyStep < history.length - 1) { const step = historyStep + 1; setHistoryStep(step); setCanvasComps(history[step].comps); setWires(history[step].wires); playSound('snap'); } };
 
-  const handleRedo = () => {
-    if (historyStep < history.length - 1) {
-      const step = historyStep + 1; setHistoryStep(step);
-      setCanvasComps(history[step].comps); setWires(history[step].wires); playSound('snap');
-    }
-  };
-
-  // -------------------------
-  // 🧠 MathLive 挂载
-  // -------------------------
   const mathContainerRef = useRef<HTMLDivElement>(null);
   const mfInstanceRef = useRef<any>(null);
 
@@ -271,17 +293,13 @@ function App() {
       const qId = currentNode.questions[subQuestionIndex];
       currentQuestion = (gameData.pool as any)[qId];
     }
-  } else if (currentView === 'review') {
-    currentQuestion = reviewQuestions[subQuestionIndex];
-  }
+  } else if (currentView === 'review') { currentQuestion = reviewQuestions[subQuestionIndex]; }
 
   useEffect(() => {
     if (currentQuestion?.type === 'MATH' && mathContainerRef.current) {
-      mathContainerRef.current.innerHTML = ''; 
-      const mf = new (window as any).MathfieldElement(); mfInstanceRef.current = mf;
+      mathContainerRef.current.innerHTML = ''; const mf = new (window as any).MathfieldElement(); mfInstanceRef.current = mf;
       mf.style.fontSize = '32px'; mf.style.minHeight = '64px'; mf.style.width = '100%'; mf.style.boxSizing = 'border-box'; mf.style.padding = '10px 15px'; mf.style.borderRadius = '12px'; mf.style.backgroundColor = '#fff'; mf.style.color = '#000'; mf.style.outline = 'none'; mf.style.border = '2px solid #1cb0f6';
-      mathContainerRef.current.appendChild(mf);
-      return () => { mf.remove(); mfInstanceRef.current = null; };
+      mathContainerRef.current.appendChild(mf); return () => { mf.remove(); mfInstanceRef.current = null; };
     }
   }, [subQuestionIndex, activeNodeIndex, currentView, currentQuestion]);
 
@@ -289,52 +307,24 @@ function App() {
     const mf = mfInstanceRef.current;
     if (mf) {
       mf.readOnly = isAnswered;
-      if (isAnswered) { mf.style.border = `2px solid ${isCorrect ? '#58cc02' : '#ff4b4b'}`; mf.style.cursor = 'default'; } 
-      else { mf.style.border = '2px solid #1cb0f6'; mf.style.cursor = 'text'; }
+      if (isAnswered) { mf.style.border = `2px solid ${isCorrect ? '#58cc02' : '#ff4b4b'}`; mf.style.cursor = 'default'; } else { mf.style.border = '2px solid #1cb0f6'; mf.style.cursor = 'text'; }
     }
   }, [isAnswered, isCorrect]);
 
-  // -------------------------
-  // 🔌 EDA 事件监听系统
-  // -------------------------
-  const getSvgPoint = (e: React.PointerEvent | PointerEvent) => {
-    if (!svgRef.current) return { x: 0, y: 0 };
-    const pt = svgRef.current.createSVGPoint();
-    pt.x = e.clientX; pt.y = e.clientY;
-    return pt.matrixTransform(svgRef.current.getScreenCTM()!.inverse());
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    const pt = getSvgPoint(e);
-    setMousePos({ x: pt.x, y: pt.y });
-    if (draggedComp && edaMode === 'SELECT' && !isAnswered) {
-      setCanvasComps(prev => ({ ...prev, [draggedComp]: { ...prev[draggedComp], x: pt.x, y: pt.y } }));
-    }
-  };
-
-  const handlePointerUp = () => {
-    if (draggedComp) { playSound('snap'); commitToHistory(canvasComps, wires); setDraggedComp(null); }
-  };
+  const getSvgPoint = (e: React.PointerEvent | PointerEvent) => { if (!svgRef.current) return { x: 0, y: 0 }; const pt = svgRef.current.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svgRef.current.getScreenCTM()!.inverse()); };
+  const handlePointerMove = (e: React.PointerEvent) => { const pt = getSvgPoint(e); setMousePos({ x: pt.x, y: pt.y }); if (draggedComp && edaMode === 'SELECT' && !isAnswered) { setCanvasComps(prev => ({ ...prev, [draggedComp]: { ...prev[draggedComp], x: pt.x, y: pt.y } })); } };
+  const handlePointerUp = () => { if (draggedComp) { playSound('snap'); commitToHistory(canvasComps, wires); setDraggedComp(null); } };
 
   const handleTerminalClick = (e: React.MouseEvent, terminalId: string) => {
-    e.stopPropagation();
-    if (isAnswered) return;
+    e.stopPropagation(); if (isAnswered) return;
     if (edaMode === 'SELECT') {
       const compId = terminalId.split('.')[0];
-      if (canvasComps[compId]) {
-        const newComps = { ...canvasComps, [compId]: { ...canvasComps[compId], rotation: (canvasComps[compId].rotation + 90) % 360 } };
-        setCanvasComps(newComps); commitToHistory(newComps, wires); playSound('snap');
-      }
+      if (canvasComps[compId]) { const newComps = { ...canvasComps, [compId]: { ...canvasComps[compId], rotation: (canvasComps[compId].rotation + 90) % 360 } }; setCanvasComps(newComps); commitToHistory(newComps, wires); playSound('snap'); }
     } else if (edaMode === 'WIRE') {
-      if (!wiringStart) {
-        setWiringStart(terminalId); playSound('wire');
-      } else {
+      if (!wiringStart) { setWiringStart(terminalId); playSound('wire'); } else {
         if (wiringStart !== terminalId) {
           const exists = wires.some(w => (w[0] === wiringStart && w[1] === terminalId) || (w[0] === terminalId && w[1] === wiringStart));
-          if (!exists) { 
-            const newWires = [...wires, [wiringStart, terminalId] as [string, string]];
-            setWires(newWires); commitToHistory(canvasComps, newWires); playSound('snap'); 
-          }
+          if (!exists) { const newWires = [...wires, [wiringStart, terminalId] as [string, string]]; setWires(newWires); commitToHistory(canvasComps, newWires); playSound('snap'); }
         }
         setWiringStart(null);
       }
@@ -342,69 +332,40 @@ function App() {
   };
 
   const getTerminalCoords = (terminalId: string) => {
-    const node = currentQuestion?.nodes?.find((n: any) => n.id === terminalId);
-    if (node) return { x: parseCoord(node.x, 800), y: parseCoord(node.y, 600) };
-    const [compId, pinId] = terminalId.split('.');
-    const compData = currentQuestion?.components?.find((c: any) => c.id === compId);
-    const placed = canvasComps[compId];
+    const node = currentQuestion?.nodes?.find((n: any) => n.id === terminalId); if (node) return { x: parseCoord(node.x, 800), y: parseCoord(node.y, 600) };
+    const [compId, pinId] = terminalId.split('.'); const compData = currentQuestion?.components?.find((c: any) => c.id === compId); const placed = canvasComps[compId];
     if (compData && placed) {
       const pin = compData.pins.find((p: any) => p.id === pinId);
       if (pin) {
         const w = compData.width || 80; const h = compData.height || 60;
         const px = parseCoord(pin.x, w) - w / 2; const py = parseCoord(pin.y, h) - h / 2;
-        const rad = (placed.rotation * Math.PI) / 180;
-        const rx = px * Math.cos(rad) - py * Math.sin(rad);
-        const ry = px * Math.sin(rad) + py * Math.cos(rad);
+        const rad = (placed.rotation * Math.PI) / 180; const rx = px * Math.cos(rad) - py * Math.sin(rad); const ry = px * Math.sin(rad) + py * Math.cos(rad);
         return { x: placed.x + rx, y: placed.y + ry };
       }
     }
     return { x: 0, y: 0 };
   };
 
-  // -------------------------
-  // 🧠 各题型判题算法
-  // -------------------------
   const evaluateNetlist = () => {
     if (!currentQuestion.targetNetlist || currentQuestion.targetNetlist.length === 0) return true;
-    const ufUser = new UnionFind();
-    currentQuestion.nodes.forEach((n:any) => ufUser.find(n.id));
-    Object.keys(canvasComps).forEach(cId => {
-      const comp = currentQuestion.components.find((c:any) => c.id === cId);
-      comp.pins.forEach((p:any) => ufUser.find(`${cId}.${p.id}`));
-    });
-    wires.forEach(([a, b]) => ufUser.union(a, b));
-    const userNets = ufUser.getNets();
+    const ufUser = new UnionFind(); currentQuestion.nodes.forEach((n:any) => ufUser.find(n.id));
+    Object.keys(canvasComps).forEach(cId => { const comp = currentQuestion.components.find((c:any) => c.id === cId); comp.pins.forEach((p:any) => ufUser.find(`${cId}.${p.id}`)); });
+    wires.forEach(([a, b]) => ufUser.union(a, b)); const userNets = ufUser.getNets();
 
-    const ufTarget = new UnionFind();
-    currentQuestion.targetNetlist.forEach((net: string[]) => {
-      for (let i = 1; i < net.length; i++) ufTarget.union(net[0], net[i]);
-    });
+    const ufTarget = new UnionFind(); currentQuestion.targetNetlist.forEach((net: string[]) => { for (let i = 1; i < net.length; i++) ufTarget.union(net[0], net[i]); });
     const targetNets = ufTarget.getNets();
 
     const serializeNets = (nets: string[][]) => nets.map(n => n.sort().join('|')).sort();
-    const tSig = serializeNets(targetNets).join('||');
-    const uSig = serializeNets(userNets).join('||');
+    const tSig = serializeNets(targetNets).join('||'); const uSig = serializeNets(userNets).join('||'); if (tSig === uSig) return true;
 
-    if (tSig === uSig) return true;
-
-    const nonPolarComps = Object.keys(canvasComps).filter(cId => {
-      const c = currentQuestion.components.find((comp:any)=>comp.id===cId);
-      return c && !c.polar && c.pins.length === 2;
-    });
-
-    const numComps = nonPolarComps.length;
-    if (numComps <= 5) {
-      const maxMask = 1 << numComps;
+    const nonPolarComps = Object.keys(canvasComps).filter(cId => { const c = currentQuestion.components.find((comp:any)=>comp.id===cId); return c && !c.polar && c.pins.length === 2; });
+    if (nonPolarComps.length <= 5) {
+      const maxMask = 1 << nonPolarComps.length;
       for (let mask = 0; mask < maxMask; mask++) {
         const ufTest = new UnionFind();
         wires.forEach(([a, b]) => {
           let mapA = a; let mapB = b;
-          nonPolarComps.forEach((cId, idx) => {
-            if ((mask & (1 << idx)) !== 0) { 
-              if (a.startsWith(`${cId}.`)) mapA = a.endsWith('.p1') ? `${cId}.p2` : `${cId}.p1`;
-              if (b.startsWith(`${cId}.`)) mapB = b.endsWith('.p1') ? `${cId}.p2` : `${cId}.p1`;
-            }
-          });
+          nonPolarComps.forEach((cId, idx) => { if ((mask & (1 << idx)) !== 0) { if (a.startsWith(`${cId}.`)) mapA = a.endsWith('.p1') ? `${cId}.p2` : `${cId}.p1`; if (b.startsWith(`${cId}.`)) mapB = b.endsWith('.p1') ? `${cId}.p2` : `${cId}.p1`; } });
           ufTest.union(mapA, mapB);
         });
         if (serializeNets(ufTest.getNets()).join('||') === tSig) return true;
@@ -445,10 +406,7 @@ function App() {
     }
   };
 
-  const resetEdaState = () => {
-    setCanvasComps({}); setWires([]); setWiringStart(null); setEdaMode('SELECT');
-    setHistory([{comps: {}, wires: []}]); setHistoryStep(0);
-  };
+  const resetEdaState = () => { setCanvasComps({}); setWires([]); setWiringStart(null); setEdaMode('SELECT'); setHistory([{comps: {}, wires: []}]); setHistoryStep(0); };
 
   const handleNext = async () => {
     let isNodeFinished = false;
@@ -471,19 +429,29 @@ function App() {
     setIsAnswered(false); setIsCorrect(null); setSelectedOptions([]); resetEdaState();
   };
 
-  const handleOptionClick = (optionText: string) => { /* 略 */ };
-  const submitMultiSelect = () => { /* 略 */ };
-  const getProgressText = () => {
-    if (currentView === 'review') return `🏥 急救复习: 进度 ${subQuestionIndex + 1} / ${reviewQuestions.length}`;
-    const currentNode: any = gameData.campaign[activeNodeIndex];
-    return `📖 ${currentNode.title}: 进度 ${subQuestionIndex + 1} / ${currentNode.questions.length}`;
+  const handleOptionClick = (optionText: string) => {
+    if (isAnswered) return;
+    const isMultiSelect = currentQuestion.answer.length > 1;
+    if (!isMultiSelect) {
+      setSelectedOptions([optionText]);
+      submitAnswer(optionText.charAt(0) === currentQuestion.answer);
+    } else {
+      if (selectedOptions.includes(optionText)) setSelectedOptions(selectedOptions.filter(o => o !== optionText));
+      else setSelectedOptions([...selectedOptions, optionText]);
+    }
   };
 
-  // 确保 isMulti 变量存在！
-  const isMulti = currentQuestion?.type === 'MCQ' && currentQuestion?.answer.length > 1;
+  const submitMultiSelect = () => {
+    if (selectedOptions.length === 0) return;
+    const userAns = selectedOptions.map(o => o.charAt(0)).sort().join('');
+    const correctAns = currentQuestion.answer.split('').sort().join('');
+    submitAnswer(userAns === correctAns);
+  };
+  const getProgressText = () => { if (currentView === 'review') return `🏥 急救复习`; const currentNode: any = gameData.campaign[activeNodeIndex]; return `📖 ${currentNode.title}: 进度 ${subQuestionIndex + 1} / ${currentNode.questions.length}`; };
 
+  const isMulti = currentQuestion?.type === 'MCQ' && currentQuestion?.answer.length > 1;
   // ==========================================
-  // 🎮 UI 渲染层: 主菜单界面 (新增云同步面板)
+  // 🎮 UI 渲染层: 主菜单界面 (新增存档库与云同步面板)
   // ==========================================
   if (currentView === 'menu') {
     return (
@@ -498,27 +466,28 @@ function App() {
 
         {/* 核心操作区 */}
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px', marginBottom: '30px', flexWrap: 'wrap' }}>
+          {/* 1. 错题急救 */}
           <button onClick={async () => { 
             const errors = await db.errorBook.toArray(); 
             if (errors.length === 0) { alert("没有错题要复习！"); return; } 
-            const expandedQueue = errors.flatMap(err => {
-              const q = (gameData.pool as any)[err.questionId]; 
-              return q ? Array(err.failCount).fill(q) : [];
-            });
+            const expandedQueue = errors.flatMap(err => { const q = (gameData.pool as any)[err.questionId]; return q ? Array(err.failCount).fill(q) : []; });
             setReviewQuestions(expandedQueue); setSubQuestionIndex(0); setCurrentView('review'); 
-          }} style={{ flex: 1, minWidth: '140px', padding: '15px', borderRadius: '12px', background: '#1cb0f6', color: '#fff', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #1899d6' }}>
-            🏥 错题急救 ({errorCount})
+          }} style={{ flex: 1, minWidth: '110px', padding: '15px', borderRadius: '12px', background: '#1cb0f6', color: '#fff', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #1899d6' }}>
+            🏥 急救 ({errorCount})
           </button>
-          <button onClick={buyHeart} style={{ flex: 1, minWidth: '140px', padding: '15px', borderRadius: '12px', background: '#ffc800', color: '#000', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #d6a800' }}>
-            🛍️ 买 ❤️ (50XP)
+          
+          {/* 2. 恢复买心按钮！ */}
+          <button onClick={buyHeart} style={{ flex: 1, minWidth: '110px', padding: '15px', borderRadius: '12px', background: '#ffc800', color: '#000', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #d6a800' }}>
+            🛍️ 买 ❤️
           </button>
-          {/* 🚀 新增：打开设置与云同步面板 */}
-          <button onClick={() => setShowSettings(true)} style={{ flex: 1, minWidth: '140px', padding: '15px', borderRadius: '12px', background: '#9b59b6', color: '#fff', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #732d91' }}>
-            ⚙️ 数据与云备份
+
+          {/* 3. 存档库与云端 */}
+          <button onClick={() => setShowSettings(true)} style={{ flex: 1, minWidth: '110px', padding: '15px', borderRadius: '12px', background: '#9b59b6', color: '#fff', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #732d91' }}>
+            📚 存档/云
           </button>
         </div>
 
-        {/* 关卡节点树 (保持不变) */}
+        {/* 关卡节点树 */}
         <div style={{ position: 'relative', padding: '20px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px' }}>
           <div style={{ position: 'absolute', width: '4px', height: '100%', background: '#444', left: '50%', transform: 'translateX(-50%)', zIndex: 0 }}></div>
           {gameData.campaign.map((node: any, i: number) => {
@@ -536,7 +505,7 @@ function App() {
                       await db.playerStats.update(playerStats.id!, { xp: playerStats.xp + (node.rewardXP || 0), campaignProgress: newProgress }); return;
                     }
                     if (isChest && isPassed) { alert("这个宝箱已经被掏空啦！"); return; }
-                    if (playerStats.hearts <= 0) { alert("红心耗尽！请用 XP 购买或去急救站！"); return; }
+                    if (playerStats.hearts <= 0) { alert("红心耗尽！去急救站复习可以回血！"); return; }
                     setActiveNodeIndex(i); setSubQuestionIndex(0); setCurrentView('quiz'); resetEdaState();
                   }}
                   className={isCurrent ? 'pulse-node' : ''}
@@ -550,40 +519,72 @@ function App() {
           })}
         </div>
 
-        {/* 🚀 设置与云同步模态框 */}
+        {/* ========================================== */}
+        {/* 📚 存档库与云同步 模态框 */}
+        {/* ========================================== */}
         {showSettings && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-            <div className="modal-pop" style={{ background: '#1e1e1e', border: '2px solid #444', borderRadius: '16px', padding: '25px', width: '100%', maxWidth: '450px', textAlign: 'left', boxShadow: '0 20px 50px rgba(0,0,0,0.7)' }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '5vh', overflowY: 'auto' }}>
+            <div className="modal-pop" style={{ background: '#1e1e1e', border: '2px solid #444', borderRadius: '16px', padding: '25px', width: '90%', maxWidth: '500px', textAlign: 'left', boxShadow: '0 20px 50px rgba(0,0,0,0.7)', marginBottom: '5vh' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
-                <h2 style={{ margin: 0, fontSize: '20px', color: '#fff' }}>⚙️ 数据与云同步</h2>
+                <h2 style={{ margin: 0, fontSize: '20px', color: '#fff' }}>📚 存档管理库</h2>
                 <button onClick={() => setShowSettings(false)} style={{ background: 'transparent', border: 'none', color: '#888', fontSize: '24px', cursor: 'pointer' }}>✖</button>
               </div>
 
-              {/* 本地离线 I/O */}
-              <div style={{ marginBottom: '25px' }}>
-                <h3 style={{ fontSize: '14px', color: '#aaa', marginBottom: '10px' }}>💾 本地离线备份 (JSON)</h3>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={exportLocalSave} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #555', cursor: 'pointer', fontWeight: 'bold' }}>📤 导出本地进度</button>
-                  <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #555', cursor: 'pointer', fontWeight: 'bold' }}>📥 导入本地存档</button>
-                  <input type="file" ref={fileInputRef} onChange={importLocalSave} accept=".json" style={{ display: 'none' }} />
-                </div>
+              {/* 当前游戏进度控制 */}
+              <div style={{ marginBottom: '20px', padding: '15px', background: '#2a2a2a', borderRadius: '12px' }}>
+                <h3 style={{ fontSize: '14px', color: '#aaa', margin: '0 0 10px 0' }}>当前进度操作</h3>
+                <button onClick={saveCurrentToLibrary} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: '#58cc02', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 4px 0 #46a302' }}>
+                  💾 将当前进度存入存档库
+                </button>
+              </div>
+
+              {/* 存档列表 */}
+              <h3 style={{ fontSize: '14px', color: '#aaa', marginBottom: '10px' }}>本地存档列表 ({saveLibrary.length}/20)</h3>
+              <div style={{ maxHeight: '250px', overflowY: 'auto', background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '10px', marginBottom: '20px' }}>
+                {saveLibrary.length === 0 ? (
+                  <div style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>存档库空空如也...</div>
+                ) : (
+                  saveLibrary.map((save: any) => (
+                    <div key={save._meta.saveId} style={{ background: '#222', border: '1px solid #444', borderRadius: '8px', padding: '12px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '16px' }}>{save._meta.name}</span>
+                        <span style={{ fontSize: '12px', color: '#1cb0f6', background: 'rgba(28,176,246,0.1)', padding: '2px 6px', borderRadius: '4px' }}>v{save._meta.appVersion}</span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#888' }}>{new Date(save._meta.timestamp).toLocaleString()}</div>
+                      <div style={{ fontSize: '13px', color: '#aaa' }}>📊 {save._meta.summary}</div>
+                      {save._meta.notes && <div style={{ fontSize: '13px', color: '#ffc800', fontStyle: 'italic' }}>📝 "{save._meta.notes}"</div>}
+                      
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                        <button onClick={() => loadFromLibrary(save)} style={{ flex: 1, padding: '8px', background: '#1cb0f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>加载</button>
+                        <button onClick={() => deleteFromLibrary(save._meta.saveId)} style={{ padding: '8px 15px', background: '#ff4b4b', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>删除</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* 批量离线导出导入 */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
+                <button onClick={exportLibraryLocal} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #555', cursor: 'pointer', fontWeight: 'bold' }}>📤 导出整个库</button>
+                <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #555', cursor: 'pointer', fontWeight: 'bold' }}>📥 导入存档包</button>
+                <input type="file" ref={fileInputRef} onChange={importLocalToLibrary} accept=".json" style={{ display: 'none' }} />
               </div>
 
               {/* GitHub Gist 云同步 */}
               <div style={{ background: '#242424', padding: '15px', borderRadius: '12px', border: '1px solid #333' }}>
-                <h3 style={{ fontSize: '14px', color: '#1cb0f6', margin: '0 0 15px 0', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>☁️ GitHub Gist 拾荒者同步</span>
-                  <a href="https://github.com/settings/tokens" target="_blank" rel="noreferrer" style={{ color: '#888', textDecoration: 'underline', fontSize: '12px' }}>获取 Token</a>
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h3 style={{ fontSize: '14px', color: '#1cb0f6', margin: 0 }}>☁️ 整个存档库云同步 (Gist)</h3>
+                  <button onClick={() => setShowHelpDoc(true)} style={{ background: 'transparent', border: '1px solid #1cb0f6', color: '#1cb0f6', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>?</button>
+                </div>
                 
                 <input type="password" placeholder="输入 GitHub Personal Access Token (PAT)" value={ghToken} onChange={(e) => handleSaveToken(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '8px', border: '1px solid #555', background: '#111', color: '#fff', marginBottom: '10px', fontSize: '14px' }} />
                 
-                <input type="text" placeholder="Gist ID (首次同步将自动生成)" value={gistId} onChange={(e) => handleSaveGist(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '8px', border: '1px solid #555', background: '#111', color: '#fff', marginBottom: '15px', fontSize: '14px', fontFamily: 'monospace' }} />
+                <input type="text" placeholder="Gist ID (首次上传将自动生成并绑定)" value={gistId} onChange={(e) => handleSaveGist(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '8px', border: '1px solid #555', background: '#111', color: '#fff', marginBottom: '15px', fontSize: '14px', fontFamily: 'monospace' }} />
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={pushToCloud} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(88, 204, 2, 0.2)', color: '#58cc02', border: '1px solid #58cc02', cursor: 'pointer', fontWeight: 'bold' }}>⬆️ 覆盖云端</button>
-                  <button onClick={pullFromCloud} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(28, 176, 246, 0.2)', color: '#1cb0f6', border: '1px solid #1cb0f6', cursor: 'pointer', fontWeight: 'bold' }}>⬇️ 拉取云端</button>
+                  <button onClick={pushLibraryToCloud} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(88, 204, 2, 0.2)', color: '#58cc02', border: '1px solid #58cc02', cursor: 'pointer', fontWeight: 'bold' }}>⬆️ 打包上云</button>
+                  <button onClick={pullLibraryFromCloud} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(28, 176, 246, 0.2)', color: '#1cb0f6', border: '1px solid #1cb0f6', cursor: 'pointer', fontWeight: 'bold' }}>⬇️ 合并拉取</button>
                 </div>
 
                 {syncStatus && (
@@ -595,6 +596,57 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* ========================================== */}
+        {/* 📖 官方保姆级教程：如何获取 GitHub Token */}
+        {/* ========================================== */}
+        {showHelpDoc && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '5vh', overflowY: 'auto' }}>
+            <div className="modal-pop" style={{ background: '#1e1e1e', border: '2px solid #1cb0f6', borderRadius: '16px', padding: '25px', width: '90%', maxWidth: '600px', textAlign: 'left', color: '#ddd', lineHeight: '1.6', marginBottom: '5vh' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
+                <h2 style={{ margin: 0, fontSize: '20px', color: '#1cb0f6' }}>📖 获取 GitHub Token 教程</h2>
+                <button onClick={() => setShowHelpDoc(false)} style={{ background: '#333', border: 'none', color: '#fff', padding: '5px 15px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>返回</button>
+              </div>
+              
+              <div style={{ background: 'rgba(255,200,0,0.1)', borderLeft: '4px solid #ffc800', padding: '10px 15px', marginBottom: '20px', borderRadius: '0 8px 8px 0', fontSize: '13px' }}>
+                <strong>🛡️ 教程有效性声明</strong><br/>
+                基于 GitHub 官方 API 策略编写。本方案完全免费、极度隐私。<br/>
+                <em>截止确认有效日期：2026年12月31日</em>
+              </div>
+
+              <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <li>
+                  <strong>登录 GitHub 并进入设置：</strong><br/>
+                  打开 <a href="https://github.com/settings/tokens" target="_blank" rel="noreferrer" style={{ color: '#1cb0f6' }}>GitHub Tokens (Classic) 页面</a>。
+                </li>
+                <li>
+                  <strong>生成新 Token：</strong><br/>
+                  点击右上角的 <code>Generate new token</code> -&gt; <code>Generate new token (classic)</code>。
+                </li>
+                <li>
+                  <strong>填写基本信息：</strong><br/>
+                  * <strong>Note:</strong> 填入 <code>Hardware Tower Sync</code>（名字随意）。<br/>
+                  * <strong>Expiration:</strong> 建议选择 <code>No expiration</code>（永不过期），避免以后频繁更换。
+                </li>
+                <li>
+                  <strong style={{ color: '#ff4b4b' }}>⚠️ 极其重要的权限设置 (安全第一)：</strong><br/>
+                  在下方的 <strong>Select scopes</strong> 权限列表中，<strong>什么都不要乱勾！什么都不要乱勾！</strong><br/>
+                  向下滚动，<strong>仅仅勾选 <code>gist</code> 这一项即可</strong>（Create gists）。<br/>
+                  <em>(本软件利用代码片段 Gist 充当云盘，绝不需要触碰你的代码仓库和私人数据，这是最安全的做法！)</em>
+                </li>
+                <li>
+                  <strong>保存并复制：</strong><br/>
+                  滑到最底部点击 <code>Generate token</code>。你会看到一串以 <code>ghp_</code> 开头的超长字符串。<strong>立刻复制它</strong>（离开页面后就再也看不到了）。
+                </li>
+                <li>
+                  <strong>回到本软件：</strong><br/>
+                  将这串 Token 粘贴进咱们的设置面板。点击【⬆️ 打包上云】，系统会自动为你创建一个隐藏的 Gist 云盘，并把生成的 Gist ID 绑定到你的输入框里。大功告成！
+                </li>
+              </ol>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
@@ -653,18 +705,16 @@ function App() {
           <div ref={mathContainerRef} style={{ width: '100%' }}></div>
           {!isAnswered && (
              <button onClick={() => {
-                const currentVal = mfInstanceRef.current?.value || '';
-                let isRight = false;
+                const currentVal = mfInstanceRef.current?.value || ''; let isRight = false;
                 const rawInput = currentVal.replace(/\s/g, ''); const rawAnswer = currentQuestion.answer.replace(/\s/g, '');
 
                 let counter = 0; const subMap: Record<string, string> = {};
                 const sanitizeLatex = (latex: string) => {
                   let s = latex.replace(/_\{([a-zA-Z0-9])\}/g, '_$1');
-                  s = s.replace(/_\{([a-zA-Z0-9]+)\}/g, (_match, p1) => {
+                  return s.replace(/_\{([a-zA-Z0-9]+)\}/g, (_match, p1) => {
                     if (!subMap[p1]) { subMap[p1] = String.fromCharCode(65 + counter); counter++; }
                     return `_${subMap[p1]}`;
                   });
-                  return s;
                 };
 
                 const astInput = sanitizeLatex(currentVal); const astAnswer = sanitizeLatex(currentQuestion.answer);
@@ -672,15 +722,11 @@ function App() {
                 if (rawInput === rawAnswer) { isRight = true; } 
                 else {
                   try {
-                    const checkEquivalent = (node1: any, node2: any) => {
-                      if (!node1 || !node2) return false;
-                      return node1.isEqual(node2) || ce.box(['Subtract', node1, node2]).simplify().isZero === true;
-                    };
+                    const checkEquivalent = (node1: any, node2: any) => { if (!node1 || !node2) return false; return node1.isEqual(node2) || ce.box(['Subtract', node1, node2]).simplify().isZero === true; };
                     if (astInput.includes('=') && astAnswer.includes('=')) {
                       const [uL, ...uR_arr] = astInput.split('='); const [tL, ...tR_arr] = astAnswer.split('=');
                       const uR = uR_arr.join('='); const tR = tR_arr.join('=');
-                      const nodeUL = ce.parse(uL); const nodeUR = ce.parse(uR);
-                      const nodeTL = ce.parse(tL); const nodeTR = ce.parse(tR);
+                      const nodeUL = ce.parse(uL); const nodeUR = ce.parse(uR); const nodeTL = ce.parse(tL); const nodeTR = ce.parse(tR);
                       if ((checkEquivalent(nodeUL, nodeTL) && checkEquivalent(nodeUR, nodeTR)) || (checkEquivalent(nodeUL, nodeTR) && checkEquivalent(nodeUR, nodeTL))) { isRight = true; }
                     } else {
                       if (checkEquivalent(ce.parse(astInput), ce.parse(astAnswer))) isRight = true;
@@ -695,10 +741,8 @@ function App() {
                       if (allVars.length > 0) {
                         let passedAll = true;
                         for (let i = 0; i < 5; i++) {
-                          const subs: Record<string, number> = {};
-                          allVars.forEach(v => { subs[v] = Math.random() * 9 + 1; });
-                          const valUser = Number(exprUser.subs(subs).N().valueOf());
-                          const valTarget = Number(exprTarget.subs(subs).N().valueOf());
+                          const subs: Record<string, number> = {}; allVars.forEach(v => { subs[v] = Math.random() * 9 + 1; });
+                          const valUser = Number(exprUser.subs(subs).N().valueOf()); const valTarget = Number(exprTarget.subs(subs).N().valueOf());
                           if (isNaN(valUser) || isNaN(valTarget)) { passedAll = false; break; }
                           if (Math.abs(valUser - valTarget) > 1e-5 && Math.abs(valUser + valTarget) > 1e-5) { passedAll = false; break; }
                         }
