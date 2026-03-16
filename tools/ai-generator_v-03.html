@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>硬件通天塔 - 工业级节点工作站 V5.5 (二维记忆版)</title>
+    <title>硬件通天塔 - 工业级节点工作站 V5.4</title>
     <style>
         body { margin: 0; padding: 20px; background: #0f0f13; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         h1, h2, h3, h4 { color: #1cb0f6; margin-top: 0; }
@@ -53,7 +53,7 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; letter-spacing: 2px;">⚙️ 通天塔 V5.5：教研级二维记忆工作站</h1>
+    <h1 style="text-align: center; letter-spacing: 2px;">⚙️ 通天塔 V5.4：具备记忆与级联能力的工业核心</h1>
 
     <div class="container">
         <div class="panel left-panel">
@@ -100,7 +100,7 @@
         <div class="panel right-panel">
             <h2>🖥️ 引擎监控终端</h2>
             <div class="terminal" id="terminal">
-                <div>[System] V5.5 启动。二维记忆矩阵已装载，数据洗脱机制已激活。</div>
+                <div>[System] V5.4 启动。级联执行与记忆管理模块已就绪。等待注入全局指令集。</div>
                 <div style="color: #555;">===========================================================</div>
             </div>
         </div>
@@ -108,7 +108,7 @@
 
     <script>
         // ==========================================
-        // 🌟 终极系统护城河：绝对格式与教研字典 (V5.5 融合版)
+        // 🌟 终极系统护城河：绝对格式与教研字典
         // ==========================================
         const SYSTEM_PROMPT = `# 🌟 Role Definition
 你是一位「首席硬件系统架构师」兼「顶尖极客教育专家」。
@@ -116,7 +116,7 @@
 # ⚠️ 绝对严格的机器解析输出规则 (CRITICAL FAIL IF VIOLATED)
 你的输出将直接喂给极其严苛的正则引擎。你必须表现得像一台精准的打印机！
 1. **绝对禁止 markdown 污染**：不准在输出的最外层使用 \`\`\`json 或 \`\`\`markdown！直接输出纯文本！
-2. **严禁省略字段 (致命错误)**：对于任何题型，绝对不准自作主张省略 \`[Options]\` 字段！即使是 BLANK_FILL (填空题)，也必须提供包含干扰项的 JSON 数组选项池！
+2. **严禁省略字段**：对于任何题型，绝对不准自作主张省略 \`[Options]\` 等要求字段！即使是填空题也必须有选项池！
 3. **严禁尾随逗号与单引号**：在 JSON 数组里，绝对不准用单引号 (')，必须严格使用双引号 (")！数组最后绝不能有逗号！
 4. **分隔符**：每道题必须且只能以单独的一行 \`---\` 作为开始，紧接着是 \`# Q题号\`。
 
@@ -202,15 +202,15 @@ D. 选项描述4
             },
             "GEN_EDA": {
                 name: "阶段外：互动微型EDA题",
-                prompt: "【指令：生成 INTERACTIVE_EDA 交互连线题】\n请基于上下文，设计考察电路连接拓扑的题目。必须严格包含 [Nodes], [Components], [Netlist] 数组。要求考察上拉、滤波、阻抗匹配、运放反馈等实际连线。可参考标准模板提供的数据结构。\n\n例如：\n[Nodes]\n[\n  { \"id\": \"n_in\", \"x\": \"20%\", \"y\": \"50%\", \"label\": \"传感器输入\" },\n  { \"id\": \"n_out\", \"x\": \"80%\", \"y\": \"50%\", \"label\": \"ADC采样端\" },\n  { \"id\": \"n_gnd\", \"x\": \"50%\", \"y\": \"80%\", \"label\": \"模拟地\" }\n]\n[Components]\n[\n  { \"id\": \"U1\", \"type\": \"OPAMP\", \"label\": \"LM358\", \"polar\": true, \"width\": 100, \"height\": 100, \"pins\": [ { \"id\": \"in_neg\", \"x\": \"0%\", \"y\": \"35%\", \"label\": \"-\" }, { \"id\": \"in_pos\", \"x\": \"0%\", \"y\": \"65%\", \"label\": \"+\" }, { \"id\": \"out\", \"x\": \"100%\", \"y\": \"50%\", \"label\": \"OUT\" } ] },\n  { \"id\": \"R_f\", \"type\": \"RESISTOR\", \"label\": \"100kΩ\", \"polar\": false, \"pins\": [ { \"id\": \"1\", \"x\": \"0%\", \"y\": \"50%\", \"label\": \"1\" }, { \"id\": \"2\", \"x\": \"100%\", \"y\": \"50%\", \"label\": \"2\" } ] }\n]\n[Netlist]\n[\n  [\"n_in\", \"U1.in_pos\"],\n  [\"U1.out\", \"n_out\", \"R_f.2\"],\n  [\"U1.in_neg\", \"R_f.1\"]\n]"
+                prompt: "【指令：生成 INTERACTIVE_EDA 交互连线题】\n请基于上下文，设计考察电路连接拓扑的题目。必须严格包含 [Nodes], [Components], [Netlist] 数组。要求考察上拉、滤波、阻抗匹配、运放反馈等实际连线。可参考标准模板提供的数据结构。"
             },
             "GEN_COMP": { 
                 name: "阶段五：综合沙盘篇", 
                 prompt: "【指令：执行阶段五（真实工程交叉沙盘篇）】\n目标：考核全盘系统设计与复杂 Debug 能力。\n设计指导：题干必须极长(>200字)，模拟真实职场环境的多因素耦合故障。隐藏致命线索（如一根60cm的杜邦线）。推荐题型：COMPREHENSIVE，必须配置精准的 Keywords 用于本地系统正则判分。" 
             },
             "MAP_DEFAULT": { 
-                name: "教研总监级地图编排 (带样例)", 
-                prompt: "你是一位顶尖的硬件教研老师。请仔细分析投喂的题目数据，组织成游戏地图。\n\n【编排法则】：\n1. 需要分析与思考传过去的一大堆题目中，哪些题目是同一主题的，考察方式是否相同，难度如何。\n2. 从老师的观点出发，编排成多个关卡（LESSON），达到循序渐进、难度从低到高、引人入胜的要求。\n3. 基础概念题放在前排 LESSON，带有复杂推导的综合题作为关底压轴。\n4. 每2-3个节点后（数量由你决定）插入 1 个 CHEST（宝箱）。\n\n【输出格式约束】：\n必须严格输出纯 JSON 数组，绝不要包含 markdown 标记。格式必须参考以下示例：\n[\n  { \"id\": 0, \"type\": \"LESSON\", \"icon\": \"🔋\", \"title\": \"1.1 电源基础与稳压选型\", \"questions\": [\"Q600001\", \"Q600002\"] },\n  { \"id\": 1, \"type\": \"LESSON\", \"icon\": \"🔋\", \"title\": \"1.2 去耦网络与噪声隔离\", \"questions\": [\"Q600003\", \"Q600004\"] },\n  { \"id\": 2, \"type\": \"CHEST\", \"icon\": \"🎁\", \"title\": \"新手破冰补给箱\", \"rewardXP\": 100 },\n  { \"id\": 3, \"type\": \"LESSON\", \"icon\": \"🧮\", \"title\": \"2.1 电容正逆向推导\", \"questions\": [\"Q600005\"] },\n  { \"id\": 4, \"type\": \"LOCKED\", \"icon\": \"👑\", \"title\": \"第二卷：敬请期待...\" }\n]" 
+                name: "教研总监级地图编排", 
+                prompt: "你是一位顶尖的硬件教研老师。请仔细分析投喂的题目数据，组织成游戏地图。\n\n【编排法则】：\n1. 必须分析与思考传过去的一大堆题目中哪些题目是同一主题的，哪些题目的考察方式相同，难度如何。\n2. 从老师的观点出发，编排成多个关卡（LESSON）。\n3. 基础概念题必须放在前排 LESSON，带有复杂推导的综合题作为关底压轴，达到循序渐进、难度从低到高、引人入胜的要求。\n4. 每2-3个节点后（具体数量你可根据认知负荷自行决定）插入 1 个 CHEST（宝箱）。\n\n【格式约束】：\n必须严格输出纯 JSON 数组，绝不要包含 markdown 标记。格式示例：\n[\n  { \"id\": <自动递增>, \"type\": \"LESSON\", \"icon\": \"🔋\", \"title\": \"1.1 你的提炼标题\", \"questions\": [\"Q1001\", \"Q1002\"] },\n  { \"id\": <自动递增>, \"type\": \"CHEST\", \"icon\": \"🎁\", \"title\": \"阶段补给箱\", \"rewardXP\": 150 }\n]" 
             }
         };
 
@@ -237,37 +237,15 @@ D. 选项描述4
         }
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-        // 🌟 核心拦截器：数据洗脱与默认赋能 (Hydration)
-        function hydrateNodes(rawNodes) {
-            return rawNodes.map(n => {
-                if (n.type === 'GEN') {
-                    // 如果存在旧版本的 historyMode，迁移到 interMemoryMode
-                    if (n.historyMode && !n.interMemoryMode) {
-                        n.interMemoryMode = n.historyMode;
-                        delete n.historyMode;
-                    }
-                    // 确保二维记忆矩阵都有明确的初始值，杜绝薛定谔状态
-                    if (!n.interMemoryMode) n.interMemoryMode = 'SUMMARY'; 
-                    if (!n.intraMemoryMode) n.intraMemoryMode = 'SUMMARY'; 
-                }
-                return n;
-            });
-        }
-
         function createNode(type) {
             const id = Date.now().toString();
             let newNode = { id, type, status: 'IDLE', retryCount: 3, delaySec: 2, prompt: '', inputData: '', outputData: '', errorLog: '' };
-            if (type === 'EXPAND') { 
-                newNode.title = "知识扩写 (EXPAND)"; newNode.presetKey = 'EXPAND_BASIC'; newNode.prompt = "输入大纲..."; 
-            }
+            if (type === 'EXPAND') { newNode.title = "知识扩写 (EXPAND)"; newNode.presetKey = 'EXPAND_BASIC'; newNode.prompt = "输入大纲..."; }
             else if (type === 'GEN') { 
                 newNode.title = "出题生产 (GEN)"; newNode.presetKey = 'GEN_CONCEPT'; newNode.targetCount = 10; newNode.chunkSize = 5; newNode.prompt = "等待字典加载..."; 
-                newNode.interMemoryMode = 'SUMMARY'; // 跨节点记忆
-                newNode.intraMemoryMode = 'SUMMARY'; // 节点内循环记忆
+                newNode.historyMode = 'SUMMARY'; // 新增：记忆模式默认开启摘要
             }
-            else if (type === 'MAP') { 
-                newNode.title = "战役编排 (MAP)"; newNode.presetKey = 'MAP_DEFAULT'; newNode.prompt = "等待字典加载..."; newNode.payloadMode = 'FULL'; newNode.rangeStart = ''; newNode.rangeEnd = ''; 
-            }
+            else if (type === 'MAP') { newNode.title = "战役编排 (MAP)"; newNode.presetKey = 'MAP_DEFAULT'; newNode.prompt = "等待字典加载..."; newNode.payloadMode = 'FULL'; newNode.rangeStart = ''; newNode.rangeEnd = ''; }
             return newNode;
         }
 
@@ -275,13 +253,16 @@ D. 选项描述4
         function removeNode(idx) { nodes.splice(idx, 1); renderNodes(); }
         function moveNode(idx, dir) { const temp = nodes[idx]; nodes[idx] = nodes[idx + dir]; nodes[idx + dir] = temp; renderNodes(); }
         
+        // 核心变更：级联失效逻辑
         function updateNode(idx, field, value) { 
             nodes[idx][field] = value; 
             if(field === 'presetKey' && PRESETS[value]) { nodes[idx].prompt = PRESETS[value].prompt; }
             
-            // 级联失效：修改配置将导致当前及下游节点变回 IDLE
-            if(['prompt', 'targetCount', 'chunkSize', 'outputData', 'payloadMode', 'rangeStart', 'rangeEnd', 'interMemoryMode', 'intraMemoryMode'].includes(field)) {
-                for(let i = idx; i < nodes.length; i++) { nodes[i].status = 'IDLE'; }
+            // 如果修改了关键配置，不仅当前节点失效，其下方所有节点也都失效（级联失效）
+            if(['prompt', 'targetCount', 'chunkSize', 'outputData', 'payloadMode', 'rangeStart', 'rangeEnd', 'historyMode'].includes(field)) {
+                for(let i = idx; i < nodes.length; i++) {
+                    nodes[i].status = 'IDLE';
+                }
             }
             renderNodes();
             saveLocalCache(); 
@@ -316,28 +297,20 @@ D. 选项描述4
                         <div><label>防限流(秒)</label><input type="number" value="${n.delaySec}" onchange="updateNode(${idx}, 'delaySec', parseInt(this.value))"></div>
                         <div><label>重试次数</label><input type="number" value="${n.retryCount}" onchange="updateNode(${idx}, 'retryCount', parseInt(this.value))"></div>
                     </div>
-                    <div><label>🌟 种子大纲 (向下游传递时，将连同扩写结果一起打包发送)</label><textarea rows="3" onchange="updateNode(${idx}, 'prompt', this.value)">${n.prompt}</textarea></div>`;
+                    <div><label>种子大纲 / Prompt</label><textarea rows="3" onchange="updateNode(${idx}, 'prompt', this.value)">${n.prompt}</textarea></div>`;
                 } else if (n.type === 'GEN') {
-                    // 🌟 核心突破：二维记忆矩阵 UI 面板
-                    configHtml = `<div class="row" style="background: rgba(28, 176, 246, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(28, 176, 246, 0.2); margin-bottom: 10px;">
-                        <div style="flex:1"><label>出题策略模板</label><select onchange="updateNode(${idx}, 'presetKey', this.value)">
+                    // V5.4 新增历史记忆模式选择器
+                    configHtml = `<div class="row">
+                        <div style="flex:1.5"><label>出题策略模板</label><select onchange="updateNode(${idx}, 'presetKey', this.value)">
                             ${Object.keys(PRESETS).filter(k=>k.startsWith('GEN_')).map(k => `<option value="${k}" ${n.presetKey === k ? 'selected' : ''}>${PRESETS[k].name}</option>`).join('')}
                         </select></div>
-                        <div style="flex:1"><label style="color:#1cb0f6;">跨节点记忆 (承接上文)</label><select onchange="updateNode(${idx}, 'interMemoryMode', this.value)">
-                            <option value="NONE" ${n.interMemoryMode==='NONE'?'selected':''}>断片 (无跨节点记忆)</option>
-                            <option value="SUMMARY" ${n.interMemoryMode==='SUMMARY'?'selected':''}>摘要 (提防全局重复，推荐)</option>
-                            <option value="FULL" ${n.interMemoryMode==='FULL'?'selected':''}>全量 (承接完整上下文)</option>
+                        <div style="flex:1.5"><label>历史记忆(防重复)</label><select onchange="updateNode(${idx}, 'historyMode', this.value)" style="border-color:#ffc800">
+                            <option value="NONE" ${n.historyMode==='NONE'?'selected':''}>断片模式 (无记忆，省Token)</option>
+                            <option value="SUMMARY" ${n.historyMode==='SUMMARY'?'selected':''}>摘要模式 (传历史题干前缀，推荐)</option>
+                            <option value="FULL" ${n.historyMode==='FULL'?'selected':''}>全量模式 (传历史完整文本，极其耗Token)</option>
                         </select></div>
-                        <div style="flex:1"><label style="color:#ffc800;">节点内记忆 (循环避重)</label><select onchange="updateNode(${idx}, 'intraMemoryMode', this.value)">
-                            <option value="NONE" ${n.intraMemoryMode==='NONE'?'selected':''}>断片 (无循环内记忆)</option>
-                            <option value="SUMMARY" ${n.intraMemoryMode==='SUMMARY'?'selected':''}>摘要 (提防轮次间重复，必选)</option>
-                            <option value="FULL" ${n.intraMemoryMode==='FULL'?'selected':''}>全量 (极耗 Token，慎用)</option>
-                        </select></div>
-                    </div>
-                    <div class="row">
-                        <div><label>目标总题数</label><input type="number" value="${n.targetCount}" onchange="updateNode(${idx}, 'targetCount', parseInt(this.value))"></div>
-                        <div><label>单批次切割数</label><input type="number" value="${n.chunkSize}" onchange="updateNode(${idx}, 'chunkSize', parseInt(this.value))"></div>
-                        <div><label>防限流(秒)</label><input type="number" value="${n.delaySec}" onchange="updateNode(${idx}, 'delaySec', parseInt(this.value))"></div>
+                        <div><label>目标题数</label><input type="number" value="${n.targetCount}" onchange="updateNode(${idx}, 'targetCount', parseInt(this.value))"></div>
+                        <div><label>单批切割</label><input type="number" value="${n.chunkSize}" onchange="updateNode(${idx}, 'chunkSize', parseInt(this.value))"></div>
                         <div><label>重试次数</label><input type="number" value="${n.retryCount}" onchange="updateNode(${idx}, 'retryCount', parseInt(this.value))"></div>
                     </div>
                     <div><label>AI 指令 (可微调)</label><textarea rows="3" onchange="updateNode(${idx}, 'prompt', this.value)">${n.prompt}</textarea></div>`;
@@ -350,7 +323,7 @@ D. 选项描述4
                             </select>
                         </div>
                         <div><label>切片起始</label><input type="text" placeholder="例 Q600001" value="${n.rangeStart || ''}" onchange="updateNode(${idx}, 'rangeStart', this.value)"></div>
-                        <div><label>切片结束</label><input type="text placeholder="例 Q600050" value="${n.rangeEnd || ''}" onchange="updateNode(${idx}, 'rangeEnd', this.value)"></div>
+                        <div><label>切片结束</label><input type="text" placeholder="例 Q600050" value="${n.rangeEnd || ''}" onchange="updateNode(${idx}, 'rangeEnd', this.value)"></div>
                         <div style="display:flex; align-items:flex-end;">
                             <button class="btn-blue" onclick="scanAllForMap(${idx})" style="padding: 10px; height: 38px;">🔍 自动扫全局</button>
                         </div>
@@ -369,7 +342,7 @@ D. 选项描述4
                             <div><label>📥 节点数据入口 (Input)</label>
                                 <textarea rows="3" readonly style="background:#111; color:#888;">${n.inputData || '运行时抓取...'}</textarea>
                             </div>
-                            <div><label style="color:#58cc02;">📤 节点沙盒暂存区 (支持手动抢救修改！修改将触发下游失效)</label>
+                            <div><label style="color:#58cc02;">📤 节点沙盒暂存区 (支持手动抢救修改！修改后会触发级联失效)</label>
                                 <textarea rows="6" class="output-area" onchange="updateNode(${idx}, 'outputData', this.value)">${n.outputData}</textarea>
                             </div>
                             ${n.errorLog ? `<div style="color:#ff4b4b; font-size:12px; padding:5px; background:rgba(255,0,0,0.1); border-radius:4px;">🚨 ${n.errorLog}</div>` : ''}
@@ -377,6 +350,7 @@ D. 选项描述4
                     </details>
                 `;
 
+                // 核心变更：加入级联执行按钮
                 el.innerHTML = `
                     <div class="node-header">
                         <div style="display:flex; align-items:center; gap:15px;">
@@ -400,9 +374,9 @@ D. 选项描述4
         function saveLocalCache() { localStorage.setItem('ht_v5_draft', JSON.stringify({ url: document.getElementById('apiUrl').value, model: document.getElementById('apiModel').value, key: document.getElementById('apiKey').value, delay: document.getElementById('apiDelay').value, nodes: nodes })); }
 
         function exportWorkflowFile() {
-            const payload = { version: "5.5", timestamp: Date.now(), globalConfig: { url: document.getElementById('apiUrl').value, model: document.getElementById('apiModel').value, delay: document.getElementById('apiDelay').value }, nodes: nodes };
+            const payload = { version: "5.4", timestamp: Date.now(), globalConfig: { url: document.getElementById('apiUrl').value, model: document.getElementById('apiModel').value, delay: document.getElementById('apiDelay').value }, nodes: nodes };
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
-            a.download = `HardwareTower_Workflow_V5.5_${new Date().getTime()}.htflow.json`; a.click();
+            a.download = `HardwareTower_Workflow_V5.4_${new Date().getTime()}.htflow.json`; a.click();
             log("📦 工作流文件 (.htflow.json) 已脱敏导出！", "success");
         }
 
@@ -412,12 +386,8 @@ D. 选项描述4
                 try {
                     const data = JSON.parse(e.target.result); if (!data.version || !data.nodes) throw new Error("无效文件格式！");
                     document.getElementById('apiUrl').value = data.globalConfig.url || ''; document.getElementById('apiModel').value = data.globalConfig.model || ''; document.getElementById('apiDelay').value = data.globalConfig.delay || 3;
-                    
-                    // 🌟 读取时调用洗脱器
-                    nodes = hydrateNodes(data.nodes); 
-                    
-                    renderNodes(); saveLocalCache();
-                    log(`📥 成功读取并洗脱外来工作流！包含 ${nodes.length} 个节点，版本: v${data.version}`, "success");
+                    nodes = data.nodes; renderNodes(); saveLocalCache();
+                    log(`📥 成功读取外来工作流！包含 ${nodes.length} 个节点，版本: v${data.version}`, "success");
                 } catch (err) { alert("❌ 导入失败: " + err.message); }
             }; reader.readAsText(file); event.target.value = '';
         }
@@ -426,11 +396,7 @@ D. 选项描述4
             const data = localStorage.getItem('ht_v5_draft');
             if(data) {
                 const config = JSON.parse(data); document.getElementById('apiUrl').value = config.url || ''; document.getElementById('apiModel').value = config.model || ''; document.getElementById('apiKey').value = config.key || ''; document.getElementById('apiDelay').value = config.delay || 3;
-                
-                // 🌟 读取时调用洗脱器
-                nodes = hydrateNodes(config.nodes || []); 
-                
-                renderNodes(); log("已从缓存恢复并洗脱草稿数据。请等待全局字典注入。", "info");
+                nodes = config.nodes || []; renderNodes(); log("已从缓存恢复草稿。请等待全局字典注入。", "info");
             } else { addNode('EXPAND'); addNode('GEN'); addNode('MAP'); }
         }
 
@@ -452,37 +418,37 @@ D. 选项描述4
         // ==========================================
         function tryRescueJSON(str) {
             let cleaned = str.trim().replace(/^```json\n?/m, '').replace(/^```\n?/m, '').replace(/```$/m, '').trim();
-            cleaned = cleaned.replace(/'/g, '"'); 
-            cleaned = cleaned.replace(/,\s*\]/g, ']'); 
+            cleaned = cleaned.replace(/'/g, '"'); // 抢救单引号
+            cleaned = cleaned.replace(/,\s*\]/g, ']'); // 抢救尾随逗号
             return JSON.parse(cleaned);
         }
 
         function validateAndRescueFormat(text) {
             text = text.replace(/^```markdown\n?/m, '').replace(/^```\n?/m, '').replace(/```$/m, '').trim();
             const blocks = text.split('---').filter(b => b.trim().length > 10);
-            if (blocks.length === 0) return { valid: false, error: "完全未找到 '---' 分隔符。AI可能没有遵循输出规范。" };
+            if (blocks.length === 0) return { valid: false, error: "完全未找到 '---' 分隔符" };
             
             let rescuedText = "";
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i];
                 const typeMatch = block.match(/\[Type\]\s*(.*)/);
-                if (!typeMatch) return { valid: false, error: `第 ${i+1} 题严重违规：缺失 [Type] 题型标签！` };
+                if (!typeMatch) return { valid: false, error: `第 ${i+1} 题缺少 [Type] 标签` };
                 
                 try {
                     const t = typeMatch[1].trim();
                     if (t === 'BLANK_FILL') {
-                        // 🛡️ 修复 null 崩溃：极度严格的拦截防线
+                        // 🛡️ 修复 Null 崩溃：增加严格的字段存在性检测
                         const optMatch = block.match(/\[Options\]([\s\S]*?)(?:\[Answer\])/);
-                        if (!optMatch || !optMatch[1].trim()) throw new Error("BLANK_FILL 题型缺失 [Options] 选项池！AI 违规省略了该字段。");
+                        if (!optMatch) throw new Error("BLANK_FILL 题型缺失 [Options] 字段！(AI违规省略了选项池)");
                         block = block.replace(optMatch[1], `\n${JSON.stringify(tryRescueJSON(optMatch[1]))}\n`); 
                         
                         const ansMatch = block.match(/\[Answer\]([\s\S]*?)(?:\n\[Explanation\]|$)/);
-                        if (!ansMatch || !ansMatch[1].trim()) throw new Error("缺失 [Answer] 标准答案字段！");
+                        if (!ansMatch) throw new Error("缺失 [Answer] 字段！");
                         block = block.replace(ansMatch[1], `\n${JSON.stringify(tryRescueJSON(ansMatch[1]))}\n`);
                     } 
                     else if (t === 'COMPREHENSIVE') {
                         const kwMatch = block.match(/\[Keywords\]([\s\S]*?)(?:\[Answer\])/);
-                        if (!kwMatch || !kwMatch[1].trim()) throw new Error("COMPREHENSIVE 沙盘题缺失 [Keywords] 评分关键词！");
+                        if (!kwMatch) throw new Error("COMPREHENSIVE 缺失 [Keywords] 字段！");
                         block = block.replace(kwMatch[1], `\n${JSON.stringify(tryRescueJSON(kwMatch[1]))}\n`);
                     } 
                     else if (t === 'MCQ') {
@@ -510,7 +476,7 @@ D. 选项描述4
         }
 
         // ==========================================
-        // ✂️ 核心引擎 2：地图切片数据提取器
+        // ✂️ 核心引擎 2：物理切片与降维摘要 (Slicing & Summarization)
         // ==========================================
         function extractMapPayload(node, idx) {
             let allBlocks = [];
@@ -540,13 +506,13 @@ D. 选项描述4
                 }
             });
 
-            if (filteredBlocks.length === 0) throw new Error(`在设定的范围 (Q${startQ} ~ Q${endQ}) 内未找到任何符合条件的题目！`);
+            if (filteredBlocks.length === 0) throw new Error(`在设定的范围 (Q${startQ} ~ Q${endQ}) 内未找到题目！`);
             if (node.payloadMode === 'SUMMARY') return { type: 'SUMMARY', count: filteredBlocks.length, text: JSON.stringify(summaryList, null, 2) };
             else return { type: 'FULL', count: filteredBlocks.length, text: filteredBlocks.join('\n\n') };
         }
 
         // ==========================================
-        // 🚀 核心引擎 3：单节点执行器与二维记忆组装
+        // 🚀 核心引擎 3：单点独立执行器与记忆组装 (Memory Assembly)
         // ==========================================
         let isEngineRunning = false;
 
@@ -561,27 +527,27 @@ D. 选项描述4
             
             updateNode(idx, 'status', 'RUNNING');
             updateNode(idx, 'errorLog', '');
+            
             log(`[节点 ${idx+1}: ${node.title}] 启动引擎...`, 'stage');
 
             try {
-                let contextInput = ""; 
+                let contextInput = "";
                 let payloadMeta = null;
-                let interMemoryContext = ""; // 跨节点记忆变量
+                let memoryContext = ""; // 记忆齿轮变量
 
-                // ---------------------------------------------------------
-                // 🌀 阶段 A: 获取静态上下文与跨节点记忆 (Inter-Node Memory)
-                // ---------------------------------------------------------
+                // --- 1. 动态摄取上下文与历史记忆 ---
                 if (node.type === 'GEN') {
-                    // 1. 获取包含“种子大纲”的背景库
+                    // 1.1 抓取顶层知识库
                     const expands = nodes.slice(0, idx).filter(n => n.type === 'EXPAND' && n.outputData.length > 0);
-                    contextInput = expands.map(n => `【💡 原始种子大纲】:\n${n.prompt}\n\n【📖 深度扩写背景库】:\n${n.outputData}`).join('\n\n====\n\n');
-                    let displayInputText = `[已捕获上方 ${expands.length} 个知识节点]`;
+                    contextInput = expands.map(n => n.outputData).join('\n\n');
+                    let displayInputText = `[捕获上方 ${expands.length} 个知识节点]`;
 
-                    // 2. 组装跨节点记忆 (其他出题模块出的题)
-                    const prevGens = nodes.slice(0, idx).filter(n => n.type === 'GEN' && n.outputData);
-                    if (node.interMemoryMode === 'SUMMARY' && prevGens.length > 0) {
+                    // 1.2 🌟 三级记忆齿轮构建 (防重复机制)
+                    const previousGens = nodes.slice(0, idx).filter(n => n.type === 'GEN' && n.outputData);
+                    
+                    if (node.historyMode === 'SUMMARY' && previousGens.length > 0) {
                         let memorySummaries = [];
-                        prevGens.forEach(n => {
+                        previousGens.forEach(n => {
                             const blocks = n.outputData.split('---').filter(b => b.trim().length > 10);
                             blocks.forEach(b => {
                                 const idM = b.match(/#\s*(Q\d+)/); const typeM = b.match(/\[Type\]\s*(.*)/); const topicM = b.match(/\[Topic\]\s*(.*)/);
@@ -589,127 +555,89 @@ D. 选项描述4
                             });
                         });
                         if (memorySummaries.length > 0) {
-                            interMemoryContext = `\n\n【⚠️ 跨模块历史防重摘要 (请避开以下考点)】:\n${memorySummaries.join('\n')}`;
-                            displayInputText += ` | [跨节点记忆: 摘要模式 (${memorySummaries.length} 题)]`;
+                            memoryContext = `\n\n【⚠️ 历史出题记忆 (请务必避开以下考点，挖掘新盲区)】:\n${memorySummaries.join('\n')}`;
+                            displayInputText += ` | [摘要记忆开启: 载入 ${memorySummaries.length} 个历史题纲]`;
                         }
-                    } else if (node.interMemoryMode === 'FULL' && prevGens.length > 0) {
-                        const fullTexts = prevGens.map(n => n.outputData).join('\n\n');
+                    } 
+                    else if (node.historyMode === 'FULL' && previousGens.length > 0) {
+                        const fullTexts = previousGens.map(n => n.outputData).join('\n\n');
                         if (fullTexts.trim()) {
-                            interMemoryContext = `\n\n【⚠️ 跨模块完整历史题库 (请通读并确保当前生成与上方不重复)】:\n${fullTexts}`;
-                            displayInputText += ` | [跨节点记忆: 全量模式]`;
+                            memoryContext = `\n\n【⚠️ 历史完整题库原文 (请通读并保持连贯，严禁知识点重复)】:\n${fullTexts}`;
+                            displayInputText += ` | [全量记忆开启: 载入超长历史原文]`;
                         }
                     } else {
-                        displayInputText += ` | [跨节点记忆: 断片无历史]`;
+                        displayInputText += ` | [断片模式: 无历史记忆]`;
                     }
+                    
                     updateNode(idx, 'inputData', displayInputText);
                 } 
                 else if (node.type === 'MAP') {
                     payloadMeta = extractMapPayload(node, idx);
                     contextInput = payloadMeta.text;
                     if (payloadMeta.type === 'FULL' && contextInput.length > 50000) {
-                        if (!confirm(`⚠️ 警告：全量投喂数据高达 ${contextInput.length} 字符！不支持超长上下文的模型会崩溃。是否继续？`)) throw new Error("用户取消了发送。");
+                        if (!confirm(`⚠️ 警告：全量投喂的数据高达 ${contextInput.length} 字符！可能导致API报错。是否继续？`)) throw new Error("用户取消了超大 Payload 发送。");
                     }
-                    updateNode(idx, 'inputData', `[提取模式: ${payloadMeta.type}] 捕获有效题数: ${payloadMeta.count}。数据量: ${contextInput.length} 字符。`);
+                    updateNode(idx, 'inputData', `[提取模式: ${payloadMeta.type}] 捕获有效题目 ${payloadMeta.count} 道。数据量: ${contextInput.length} 字符。`);
                 }
 
-                // ---------------------------------------------------------
-                // 🌀 阶段 B: AI 通信与大循环 (The Big Loop)
-                // ---------------------------------------------------------
-                if (node.type === 'EXPAND' || node.type === 'MAP') {
-                    // 非切片节点的单次执行逻辑
-                    let retries = 0; let success = false; let finalOutput = "";
-                    while (retries < (node.retryCount || 1) && !success) {
-                        let rawOutput = "";
-                        try {
-                            if (node.type === 'EXPAND') {
-                                const sysPrompt = "你是一位资深技术总监与教材编写者。绝对不准生成任何测试题。";
-                                const userPrompt = `用户知识大纲：\n${node.prompt}\n\n请极度深入地扩充底层原理、易错陷阱。字数 3000-5000 字。仅输出知识文稿。`;
-                                finalOutput = await fetchLLM([{ role: 'system', content: sysPrompt }, { role: 'user', content: userPrompt }]);
-                            } else if (node.type === 'MAP') {
-                                const sysPrompt = "你是一位只能输出合法 JSON 数组的极其严谨的教研总监。严禁输出 markdown 标记。";
-                                const modeGuidance = payloadMeta.type === 'FULL' ? "以下是试题原文库，请评估难度梯度。" : "以下是摘要元数据，请根据 Topic 聚类。";
-                                const userPrompt = `${modeGuidance}\n\n【题库数据】:\n${contextInput}\n\n【教研要求】:\n${node.prompt}\n新节点 ID 从 ${globalState.startLevelID} 开始递增。`;
-                                rawOutput = await fetchLLM([{ role: 'system', content: sysPrompt }, { role: 'user', content: userPrompt }]);
-                                finalOutput = JSON.stringify(tryRescueJSON(rawOutput), null, 2);
-                                
-                                const parsedMap = JSON.parse(finalOutput);
-                                let mappedQCount = 0; parsedMap.forEach(level => { if(level.questions) mappedQCount += level.questions.length; });
-                                if (mappedQCount < payloadMeta.count) log(`⚠️ 漏题警告！送入 ${payloadMeta.count} 题，仅编排 ${mappedQCount} 题。`, 'warn');
-                            }
+                // --- 2. 执行 AI 通信 ---
+                let retries = 0; let success = false; let finalOutput = "";
+                
+                while (retries < (node.retryCount || 1) && !success) {
+                    let rawOutput = "";
+                    try {
+                        let sysPrompt = SYSTEM_PROMPT; // 强制注入顶层护城河！
+                        let userPrompt = '';
+                        
+                        if (node.type === 'EXPAND') {
+                            sysPrompt = "你是一位资深技术总监与教材编写者。绝对不准生成任何测试题。";
+                            userPrompt = `用户大纲：\n${node.prompt}\n\n请扩充底层原理，字数 3000-5000 字。仅输出知识文稿。`;
+                            finalOutput = await fetchLLM([{ role: 'system', content: sysPrompt }, { role: 'user', content: userPrompt }]);
                             success = true;
-                        } catch (err) {
-                            retries++; log(`> 节点重试 (${retries}/${node.retryCount}) 原因: ${err.message}`, 'warn', rawOutput);
-                            if (retries >= (node.retryCount || 1)) throw err;
-                            if (node.delaySec) await delay(node.delaySec * 1000);
-                        }
-                    }
-                    updateNode(idx, 'outputData', finalOutput);
-                } 
-                else if (node.type === 'GEN') {
-                    // 🌟 恢复出题节点的大循环 (Loop Regression Fix)
-                    let generatedInMod = 0;
-                    // 如果节点之前已经生成了一部分（比如中途崩溃后重跑），我们先清空当前节点的输出重新来，或者你也可以选择累加。这里选择清空重新生成，保证逻辑连贯。
-                    updateNode(idx, 'outputData', ""); 
-                    
-                    while (generatedInMod < node.targetCount) {
-                        const need = Math.min(node.chunkSize, node.targetCount - generatedInMod);
-                        if (node.delaySec > 0 && generatedInMod > 0) { log(`⏱️ 切片冷却，等待 ${node.delaySec} 秒...`); await delay(node.delaySec * 1000); }
-                        
-                        log(`> 开始生产切片: 索取 ${need} 题... (${generatedInMod}/${node.targetCount})`);
-                        
-                        // 组装节点内的循环记忆 (Intra-Node Memory)
-                        let intraMemoryContext = "";
-                        const currOutput = nodes[idx].outputData;
-                        if (node.intraMemoryMode === 'SUMMARY' && currOutput.trim().length > 0) {
-                            let localSummaries = [];
-                            const blocks = currOutput.split('---').filter(b => b.trim().length > 10);
-                            blocks.forEach(b => {
-                                const idM = b.match(/#\s*(Q\d+)/); const topM = b.match(/\[Topic\]\s*(.*)/);
-                                if (idM) localSummaries.push(`- ${idM[1]}: ${topM ? topM[1].trim() : '未知考点'}`);
+                        } 
+                        else if (node.type === 'GEN') {
+                            let calculatedStartQID = globalState.startQID;
+                            nodes.slice(0, idx).filter(n => n.type === 'GEN').forEach(n => {
+                                const m = [...n.outputData.matchAll(/#\s*Q(\d+)/g)];
+                                if(m.length > 0) calculatedStartQID = Math.max(calculatedStartQID, Math.max(...m.map(x=>parseInt(x[1]))) + 1);
                             });
-                            intraMemoryContext = `\n\n【⚠️ 本轮已生成题纲 (严禁重复考点)】:\n${localSummaries.join('\n')}`;
-                        } else if (node.intraMemoryMode === 'FULL' && currOutput.trim().length > 0) {
-                            intraMemoryContext = `\n\n【⚠️ 本轮已出完整题目 (严禁重复)】:\n${currOutput}`;
+
+                            // 组装带记忆的 Prompt
+                            userPrompt = `【权威背景库】:\n${contextInput}${memoryContext}\n\n${node.prompt}\n\n基于背景库，出 ${node.chunkSize} 道题。编号从 # Q${calculatedStartQID} 开始递增！`;
+                            rawOutput = await fetchLLM([{ role: 'system', content: sysPrompt }, { role: 'user', content: userPrompt }]);
+                            
+                            const val = validateAndRescueFormat(rawOutput);
+                            if (!val.valid) throw new Error(val.error);
+                            finalOutput = (node.outputData + `\n\n${val.cleanText}`).trim();
+                            success = true;
+                        }
+                        else if (node.type === 'MAP') {
+                            sysPrompt = "你是一位只能输出合法 JSON 数组的极其严谨的教研总监。严禁输出任何 markdown 标记。";
+                            let modeGuidance = payloadMeta.type === 'FULL' ? 
+                                "以下是完整的试题原文库。请通读题干与解析，准确评估难度梯度。" : 
+                                "以下是试题的摘要元数据。请根据 Topic 主题进行逻辑聚类。";
+                                
+                            userPrompt = `${modeGuidance}\n\n【题库数据】:\n${contextInput}\n\n【教研要求】:\n${node.prompt}\n新节点 ID 从 ${globalState.startLevelID} 开始递增。`;
+                            
+                            rawOutput = await fetchLLM([{ role: 'system', content: sysPrompt }, { role: 'user', content: userPrompt }]);
+                            finalOutput = JSON.stringify(tryRescueJSON(rawOutput), null, 2);
+                            
+                            const parsedMap = JSON.parse(finalOutput);
+                            let mappedQCount = 0; parsedMap.forEach(level => { if(level.questions) mappedQCount += level.questions.length; });
+                            if (mappedQCount < payloadMeta.count) log(`⚠️ AI 发生了漏题现象！送入 ${payloadMeta.count} 题，AI 仅编排了 ${mappedQCount} 题。请检查输出！`, 'warn');
+                            success = true;
                         }
 
-                        let retries = 0; let success = false;
-                        while (retries < (node.retryCount || 1) && !success) {
-                            let rawOutput = "";
-                            try {
-                                // 动态计算下一个 QID
-                                let calculatedStartQID = globalState.startQID;
-                                nodes.slice(0, idx + 1).forEach(n => {
-                                    if(n.type === 'GEN' && n.outputData) {
-                                        const m = [...n.outputData.matchAll(/#\s*Q(\d+)/g)];
-                                        if(m.length > 0) calculatedStartQID = Math.max(calculatedStartQID, Math.max(...m.map(x=>parseInt(x[1]))) + 1);
-                                    }
-                                });
-
-                                // 组装终极神龙 Prompt
-                                const userPrompt = `【权威知识背景库】:\n${contextInput}${interMemoryContext}${intraMemoryContext}\n\n【出题要求】:\n${node.prompt}\n\n请严格基于上述权威背景库，出 ${need} 道题。编号请严格从 # Q${calculatedStartQID} 开始递增！`;
-                                
-                                rawOutput = await fetchLLM([{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: userPrompt }]);
-                                
-                                const val = validateAndRescueFormat(rawOutput);
-                                if (!val.valid) throw new Error(val.error);
-                                
-                                // 追加写入并实时刷新 UI
-                                const newOutput = (nodes[idx].outputData + `\n\n${val.cleanText}`).trim();
-                                updateNode(idx, 'outputData', newOutput);
-                                
-                                generatedInMod += val.count;
-                                success = true;
-                                log(`> 切片质检成功 (+${val.count}题)！进度: ${generatedInMod} / ${node.targetCount}`, 'success');
-                            } catch (err) {
-                                retries++; log(`> 切片重试 (${retries}/${node.retryCount}) 原因: ${err.message}`, 'error', rawOutput);
-                                if (retries >= (node.retryCount || 1)) throw err;
-                                if (node.delaySec) await delay(node.delaySec * 1000);
-                            }
-                        }
+                        log(`> 节点执行成功！`, 'success');
+                    } catch (err) {
+                        retries++; log(`> 节点崩溃重试 (${retries}/${node.retryCount}) 原因: ${err.message}`, 'error', rawOutput);
+                        if (retries >= (node.retryCount || 1)) throw err;
+                        if (node.delaySec) await delay(node.delaySec * 1000);
                     }
                 }
 
-                // --- 3. 最终收尾 ---
+                // --- 3. 收尾回写 ---
+                updateNode(idx, 'outputData', finalOutput);
                 updateNode(idx, 'status', 'SUCCESS');
                 document.getElementById(`badge-${node.id}`).className = 'status-badge status-SUCCESS';
                 document.getElementById(`badge-${node.id}`).innerHTML = '✅ SUCCESS';
@@ -735,7 +663,7 @@ D. 选项描述4
             log(`🚀 级联调度器启动，从节点 ${startIdx + 1} 开始向下扫描执行...`, "stage");
             for (let i = startIdx; i < nodes.length; i++) {
                 if (nodes[i].status !== 'SUCCESS') {
-                    if (i > startIdx && nodes[i].delaySec) { log(`⏱️ 节点间冷却，等待 ${nodes[i].delaySec} 秒...`); await delay(nodes[i].delaySec * 1000); }
+                    if (i > startIdx && nodes[i].delaySec) { log(`⏱️ 节点冷却，等待 ${nodes[i].delaySec} 秒...`); await delay(nodes[i].delaySec * 1000); }
                     await runSingleNode(i);
                     if (nodes[i].status === 'ERROR') {
                         log(`⛔ 级联流水线因节点 ${i+1} 致命错误而熔断。向下传递终止。`, "error"); return;
