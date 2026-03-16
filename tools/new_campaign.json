@@ -1,0 +1,327 @@
+[
+  {
+    "id": 0,
+    "type": "QUESTION",
+    "lesson": 1,
+    "question_id": "Q600001"
+  },
+  {
+    "id": 1,
+    "type": "CHEST",
+    "lesson": 1
+  },
+  {
+    "id": 2,
+    "type": "QUESTION",
+    "lesson": 1,
+    "question_id": "Q600002"
+  },
+  {
+    "id": 3,
+    "type": "CHEST",
+    "lesson": 1
+  },
+  {
+    "id": 4,
+    "type": "QUESTION",
+    "lesson": 1,
+    "question_id": "Q600003"
+  },
+  {
+    "id": 5,
+    "type": "CHEST",
+    "lesson": 1
+  },
+  {
+    "id": 6,
+    "type": "QUESTION",
+    "lesson": 1,
+    "question_id": "Q600004"
+  },
+  {
+    "id": 7,
+    "type": "CHEST",
+    "lesson": 1
+  },
+  {
+    "id": 8,
+    "type": "QUESTION",
+    "lesson": 1,
+    "question_id": "Q600005"
+  },
+  {
+    "id": 9,
+    "type": "CHEST",
+    "lesson": 1
+  },
+  {
+    "id": 10,
+    "type": "QUESTION",
+    "lesson": 2,
+    "question_id": "Q600006"
+  },
+  {
+    "id": 11,
+    "type": "CHEST",
+    "lesson": 2
+  },
+  {
+    "id": 12,
+    "type": "QUESTION",
+    "lesson": 2,
+    "question_id": "Q600007"
+  },
+  {
+    "id": 13,
+    "type": "CHEST",
+    "lesson": 2
+  },
+  {
+    "id": 14,
+    "type": "QUESTION",
+    "lesson": 2,
+    "question_id": "Q600008"
+  },
+  {
+    "id": 15,
+    "type": "CHEST",
+    "lesson": 2
+  },
+  {
+    "id": 16,
+    "type": "QUESTION",
+    "lesson": 2,
+    "question_id": "Q600009"
+  },
+  {
+    "id": 17,
+    "type": "CHEST",
+    "lesson": 2
+  },
+  {
+    "id": 18,
+    "type": "QUESTION",
+    "lesson": 2,
+    "question_id": "Q600010"
+  },
+  {
+    "id": 19,
+    "type": "CHEST",
+    "lesson": 2
+  },
+  {
+    "id": 20,
+    "type": "QUESTION",
+    "lesson": 3,
+    "question_id": "Q600011"
+  },
+  {
+    "id": 21,
+    "type": "CHEST",
+    "lesson": 3
+  },
+  {
+    "id": 22,
+    "type": "QUESTION",
+    "lesson": 3,
+    "question_id": "Q600012"
+  },
+  {
+    "id": 23,
+    "type": "CHEST",
+    "lesson": 3
+  },
+  {
+    "id": 24,
+    "type": "QUESTION",
+    "lesson": 3,
+    "question_id": "Q600013"
+  },
+  {
+    "id": 25,
+    "type": "CHEST",
+    "lesson": 3
+  },
+  {
+    "id": 26,
+    "type": "QUESTION",
+    "lesson": 3,
+    "question_id": "Q600014"
+  },
+  {
+    "id": 27,
+    "type": "CHEST",
+    "lesson": 3
+  },
+  {
+    "id": 28,
+    "type": "QUESTION",
+    "lesson": 3,
+    "question_id": "Q600015"
+  },
+  {
+    "id": 29,
+    "type": "CHEST",
+    "lesson": 3
+  },
+  {
+    "id": 30,
+    "type": "QUESTION",
+    "lesson": 4,
+    "question_id": "Q600016"
+  },
+  {
+    "id": 31,
+    "type": "CHEST",
+    "lesson": 4
+  },
+  {
+    "id": 32,
+    "type": "QUESTION",
+    "lesson": 4,
+    "question_id": "Q600017"
+  },
+  {
+    "id": 33,
+    "type": "CHEST",
+    "lesson": 4
+  },
+  {
+    "id": 34,
+    "type": "QUESTION",
+    "lesson": 4,
+    "question_id": "Q600018"
+  },
+  {
+    "id": 35,
+    "type": "CHEST",
+    "lesson": 4
+  },
+  {
+    "id": 36,
+    "type": "QUESTION",
+    "lesson": 4,
+    "question_id": "Q600019"
+  },
+  {
+    "id": 37,
+    "type": "CHEST",
+    "lesson": 4
+  },
+  {
+    "id": 38,
+    "type": "QUESTION",
+    "lesson": 4,
+    "question_id": "Q600020"
+  },
+  {
+    "id": 39,
+    "type": "CHEST",
+    "lesson": 4
+  },
+  {
+    "id": 40,
+    "type": "QUESTION",
+    "lesson": 5,
+    "question_id": "Q600021"
+  },
+  {
+    "id": 41,
+    "type": "CHEST",
+    "lesson": 5
+  },
+  {
+    "id": 42,
+    "type": "QUESTION",
+    "lesson": 5,
+    "question_id": "Q600022"
+  },
+  {
+    "id": 43,
+    "type": "CHEST",
+    "lesson": 5
+  },
+  {
+    "id": 44,
+    "type": "QUESTION",
+    "lesson": 5,
+    "question_id": "Q600023"
+  },
+  {
+    "id": 45,
+    "type": "CHEST",
+    "lesson": 5
+  },
+  {
+    "id": 46,
+    "type": "QUESTION",
+    "lesson": 5,
+    "question_id": "Q600024"
+  },
+  {
+    "id": 47,
+    "type": "CHEST",
+    "lesson": 5
+  },
+  {
+    "id": 48,
+    "type": "QUESTION",
+    "lesson": 5,
+    "question_id": "Q600025"
+  },
+  {
+    "id": 49,
+    "type": "CHEST",
+    "lesson": 5
+  },
+  {
+    "id": 50,
+    "type": "QUESTION",
+    "lesson": 6,
+    "question_id": "Q600026"
+  },
+  {
+    "id": 51,
+    "type": "CHEST",
+    "lesson": 6
+  },
+  {
+    "id": 52,
+    "type": "QUESTION",
+    "lesson": 6,
+    "question_id": "Q600027"
+  },
+  {
+    "id": 53,
+    "type": "CHEST",
+    "lesson": 6
+  },
+  {
+    "id": 54,
+    "type": "QUESTION",
+    "lesson": 6,
+    "question_id": "Q600028"
+  },
+  {
+    "id": 55,
+    "type": "CHEST",
+    "lesson": 6
+  },
+  {
+    "id": 56,
+    "type": "QUESTION",
+    "lesson": 6,
+    "question_id": "Q600029"
+  },
+  {
+    "id": 57,
+    "type": "CHEST",
+    "lesson": 6
+  },
+  {
+    "id": 58,
+    "type": "QUESTION",
+    "lesson": 6,
+    "question_id": "Q600030"
+  }
+]
