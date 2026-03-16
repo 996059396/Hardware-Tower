@@ -75,8 +75,53 @@ function App() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]); 
+  const [blankAnswers, setBlankAnswers] = useState<string[]>([]); 
   const [isShaking, setIsShaking] = useState(false);
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
+  // ==========================================
+  // 🛠️ 极客工作台专属状态 (战役四：综合应用题)
+  // ==========================================
+  const [compText, setCompText] = useState(''); // 用户的综合文字作答
+  const [memoText, setMemoText] = useState(() => localStorage.getItem('ht_memo') || ''); // 备忘录/草稿本 (持久化)
+  const [calcInput, setCalcInput] = useState(''); // 计算器输入
+  const [calcResult, setCalcResult] = useState(''); // 计算器输出
+
+  // ==========================================
+  // 🤖 AI 阅卷引擎专属状态 (战役三)
+  // ==========================================
+  const [llmUrl, setLlmUrl] = useState(() => localStorage.getItem('ht_llm_url') || 'https://api.openai.com/v1/chat/completions');
+  const [llmKey, setLlmKey] = useState(() => localStorage.getItem('ht_llm_key') || '');
+  const [llmModel, setLlmModel] = useState(() => localStorage.getItem('ht_llm_model') || 'gpt-3.5-turbo');
+  const [isCallingAI, setIsCallingAI] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<{score: number, feedback: string} | null>(null);
+
+  // 保存 AI 配置
+  const handleSaveLLM = (key: string, val: string) => {
+    if (key === 'url') { setLlmUrl(val); localStorage.setItem('ht_llm_url', val); }
+    if (key === 'key') { setLlmKey(val); localStorage.setItem('ht_llm_key', val); }
+    if (key === 'model') { setLlmModel(val); localStorage.setItem('ht_llm_model', val); }
+  };
+  
+  // 用于综合题里的“插入公式”虚拟键盘
+  const compMathContainerRef = useRef<HTMLDivElement>(null);
+  const compMfInstanceRef = useRef<any>(null);
+
+  // 备忘录自动保存机制
+  useEffect(() => {
+    localStorage.setItem('ht_memo', memoText);
+  }, [memoText]);
+
+  // 极客计算器求值逻辑 (复用 Cortex-js 引擎)
+  const handleCalculate = () => {
+    if (!calcInput.trim()) { setCalcResult(''); return; }
+    try {
+      // 解析表达式并求出浮点数结果
+      const res = ce.parse(calcInput).N().valueOf();
+      setCalcResult(isNaN(Number(res)) ? '运算错误' : String(res));
+    } catch(e) {
+      setCalcResult('语法错误');
+    }
+  };
 
   // -------------------------
   // 📚 存档库与云同步专属状态 (战役三：数据持久化升维)
@@ -310,6 +355,26 @@ function App() {
       if (isAnswered) { mf.style.border = `2px solid ${isCorrect ? '#58cc02' : '#ff4b4b'}`; mf.style.cursor = 'default'; } else { mf.style.border = '2px solid #1cb0f6'; mf.style.cursor = 'text'; }
     }
   }, [isAnswered, isCorrect]);
+  // ==========================================
+  // 🛠️ 综合应用题专属：挂载公式输入键盘
+  // ==========================================
+  useEffect(() => {
+    if (currentQuestion?.type === 'COMPREHENSIVE' && compMathContainerRef.current) {
+      compMathContainerRef.current.innerHTML = ''; 
+      const mf = new (window as any).MathfieldElement(); 
+      compMfInstanceRef.current = mf;
+      mf.style.fontSize = '20px'; 
+      mf.style.width = '100%'; 
+      mf.style.padding = '8px'; 
+      mf.style.borderRadius = '6px'; 
+      mf.style.border = '1px solid #555';
+      mf.style.background = '#111';
+      mf.style.color = '#ffc800';
+      mf.style.boxSizing = 'border-box';
+      compMathContainerRef.current.appendChild(mf);
+      return () => { mf.remove(); compMfInstanceRef.current = null; };
+    }
+  }, [subQuestionIndex, activeNodeIndex, currentView, currentQuestion]);
 
   const getSvgPoint = (e: React.PointerEvent | PointerEvent) => { if (!svgRef.current) return { x: 0, y: 0 }; const pt = svgRef.current.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svgRef.current.getScreenCTM()!.inverse()); };
   const handlePointerMove = (e: React.PointerEvent) => { const pt = getSvgPoint(e); setMousePos({ x: pt.x, y: pt.y }); if (draggedComp && edaMode === 'SELECT' && !isAnswered) { setCanvasComps(prev => ({ ...prev, [draggedComp]: { ...prev[draggedComp], x: pt.x, y: pt.y } })); } };
@@ -426,7 +491,7 @@ function App() {
     }
 
     if (isNodeFinished) { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58cc02', '#ffc800'] }); setCurrentView('menu'); }
-    setIsAnswered(false); setIsCorrect(null); setSelectedOptions([]); resetEdaState();
+    setIsAnswered(false); setIsCorrect(null); setSelectedOptions([]); setBlankAnswers([]); setCompText(''); setAiFeedback(null); resetEdaState();
   };
 
   const handleOptionClick = (optionText: string) => {
@@ -518,6 +583,7 @@ function App() {
             );
           })}
         </div>
+        
 
         {/* ========================================== */}
         {/* 📚 存档库与云同步 模态框 */}
@@ -593,6 +659,22 @@ function App() {
                   </div>
                 )}
               </div>
+              {/* 🤖 AI 老专家阅卷引擎配置 */}
+              <div style={{ background: '#242424', padding: '15px', borderRadius: '12px', border: '1px solid #333', marginTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h3 style={{ fontSize: '14px', color: '#9b59b6', margin: 0 }}>🤖 AI 老专家阅卷引擎 (兼容 OpenAI 格式)</h3>
+                </div>
+                
+                <input type="text" placeholder="API Base URL (如: https://api.deepseek.com/v1/chat/completions)" value={llmUrl} onChange={(e) => handleSaveLLM('url', e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #555', background: '#111', color: '#fff', marginBottom: '10px', fontSize: '13px', fontFamily: 'monospace' }} />
+                
+                <input type="password" placeholder="API Key (Bearer Token)" value={llmKey} onChange={(e) => handleSaveLLM('key', e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #555', background: '#111', color: '#fff', marginBottom: '10px', fontSize: '13px' }} />
+                
+                <input type="text" placeholder="模型名称 (如: deepseek-chat, gpt-4o)" value={llmModel} onChange={(e) => handleSaveLLM('model', e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #555', background: '#111', color: '#fff', fontSize: '13px', fontFamily: 'monospace' }} />
+                
+                <div style={{ fontSize: '12px', color: '#888', marginTop: '10px', lineHeight: '1.4' }}>
+                  提示：支持任意 OpenAI 兼容接口。填入配置后，在综合应用题中即可呼叫 AI 架构师进行极其硬核的主观题图文/公式推演阅卷。数据仅在本地浏览器与你配置的 API 之间流转。
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -650,6 +732,7 @@ function App() {
       </div>
     );
   }
+  
 
   // ==========================================
   // 🎮 答题渲染层 (MCQ, MATH, INTERACTIVE_EDA)
@@ -658,7 +741,7 @@ function App() {
     <div className={isShaking ? 'shake-animation' : ''} style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'left', padding: '20px' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '10px', borderBottom: '2px solid #333' }}>
-        <button onClick={() => { setCurrentView('menu'); setIsAnswered(false); setSelectedOptions([]); resetEdaState(); }} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', fontSize: '24px' }}>✖</button>
+        <button onClick={() => { setCurrentView('menu'); setIsAnswered(false); setSelectedOptions([]); setBlankAnswers([]); setCompText(''); setAiFeedback(null); resetEdaState(); }} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', fontSize: '24px' }}>✖</button>
         <div style={{ fontSize: '18px', fontWeight: 'bold' }}><span style={{ color: '#ff4b4b', marginRight: '15px' }}>❤️ {playerStats.hearts}</span><span style={{ color: '#ffc800' }}>⚡ {playerStats.xp} XP</span></div>
       </div>
       
@@ -670,9 +753,315 @@ function App() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '30px' }}><h2 style={{ marginTop: 0, lineHeight: '1.4' }}>{currentQuestion?.prompt}</h2></div>
+      {/* 动态隐藏原题干，因为填空题的题干自带了交互插槽 */}
+      {currentQuestion?.type !== 'BLANK_FILL' && (
+        <div style={{ marginBottom: '30px' }}><h2 style={{ marginTop: 0, lineHeight: '1.4' }}>{currentQuestion?.prompt}</h2></div>
+      )}
 
-      {currentQuestion?.type === 'MCQ' ? (
+      {currentQuestion?.type === 'BLANK_FILL' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* 交互式题干渲染区 (加入 || "" 防崩机制) */}
+          <div style={{ fontSize: '18px', lineHeight: '2.2', background: '#242424', padding: '25px', borderRadius: '12px', border: '1px solid #444', color: '#ddd' }}>
+            {(currentQuestion?.prompt || "题干解析失败，请检查 questions.md 格式！").split(/(【空\d+】)/g).map((part: string, i: number) => {
+               if (part.match(/【空\d+】/)) {
+                  const match = part.match(/【空(\d+)】/);
+                  const idx = match ? parseInt(match[1], 10) - 1 : 0;
+                  const filledValue = blankAnswers[idx];
+                  const answerArray = currentQuestion?.answer || [];
+                  
+                  return (
+                    <span 
+                      key={i} 
+                      onClick={() => {
+                        if (isAnswered || !filledValue) return;
+                        const newAnswers = [...blankAnswers];
+                        newAnswers[idx] = ''; // 点击已填入的词，退回词汇池
+                        setBlankAnswers(newAnswers);
+                        playSound('snap');
+                      }}
+                      style={{
+                        display: 'inline-block', minWidth: '100px', padding: '2px 12px', margin: '0 6px',
+                        border: `2px ${filledValue ? 'solid' : 'dashed'} ${isAnswered ? (isCorrect ? '#58cc02' : (answerArray[idx] === filledValue ? '#58cc02' : '#ff4b4b')) : '#1cb0f6'}`,
+                        borderRadius: '8px', color: filledValue ? '#fff' : '#888',
+                        backgroundColor: filledValue ? (isAnswered ? (answerArray[idx] === filledValue ? '#58cc02' : '#ff4b4b') : '#1cb0f6') : 'rgba(28, 176, 246, 0.05)',
+                        cursor: (isAnswered || !filledValue) ? 'default' : 'pointer',
+                        fontWeight: 'bold', textAlign: 'center',
+                        boxShadow: filledValue && !isAnswered ? '0 4px 0 #1899d6' : 'none',
+                        transform: filledValue && !isAnswered ? 'translateY(-2px)' : 'none',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {filledValue || part}
+                    </span>
+                  );
+               }
+               return <strong key={i}>{part}</strong>;
+            })}
+          </div>
+
+          {/* 候选词汇池 (Options Pool) (加入 || [] 防崩机制) */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', background: '#1e1e1e', padding: '20px', borderRadius: '12px', border: '2px dashed #444' }}>
+            <div style={{ width: '100%', fontSize: '14px', color: '#888', marginBottom: '5px' }}>👇 点击下方词汇填入上方的空缺处</div>
+            {(currentQuestion?.options || []).map((opt: string, idx: number) => {
+               const isUsed = blankAnswers.includes(opt);
+               return (
+                 <button 
+                   key={idx} disabled={isUsed || isAnswered}
+                   onClick={() => {
+                      if (isAnswered || isUsed) return;
+                      const answerArray = currentQuestion?.answer || [];
+                      const answerLen = answerArray.length;
+                      let newAnswers = [...blankAnswers];
+                      if (newAnswers.length < answerLen) newAnswers = newAnswers.concat(Array(answerLen - newAnswers.length).fill(''));
+                      
+                      const firstEmptyIdx = newAnswers.findIndex(v => !v);
+                      if (firstEmptyIdx !== -1) {
+                          newAnswers[firstEmptyIdx] = opt;
+                          setBlankAnswers(newAnswers);
+                          playSound('snap');
+                      }
+                   }}
+                   style={{
+                     padding: '10px 16px', borderRadius: '8px',
+                     background: isUsed ? '#2a2a2a' : '#333', color: isUsed ? '#555' : '#fff',
+                     border: `2px solid ${isUsed ? '#333' : '#1cb0f6'}`,
+                     cursor: isUsed || isAnswered ? 'not-allowed' : 'pointer',
+                     fontWeight: 'bold', opacity: isUsed ? 0.4 : 1, transition: 'all 0.1s',
+                     transform: isUsed ? 'none' : 'translateY(-2px)',
+                     boxShadow: isUsed ? 'none' : '0 4px 0 #1899d6'
+                   }}
+                 >
+                   {opt}
+                 </button>
+               )
+            })}
+          </div>
+
+          {!isAnswered && (
+            <button 
+              onClick={() => {
+                const answerArray = currentQuestion?.answer || [];
+                const answerLen = answerArray.length;
+                let newAnswers = [...blankAnswers];
+                if (newAnswers.length < answerLen) newAnswers = newAnswers.concat(Array(answerLen - newAnswers.length).fill(''));
+                if (newAnswers.includes('')) { alert("⚠️ 请填完所有的空！"); return; }
+                
+                const isRight = JSON.stringify(newAnswers) === JSON.stringify(answerArray);
+                submitAnswer(isRight);
+              }}
+              style={{ padding: '16px', borderRadius: '12px', background: '#1cb0f6', color: '#fff', border: 'none', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #1899d6', marginTop: '10px' }}
+            >
+              提交逻辑链
+            </button>
+          )}
+        </div>
+      ) : 
+
+      /* ========================================== */
+      /* 🛠️ 新增：COMPREHENSIVE 综合应用题 (极客工作台) */
+      /* ========================================== */
+      currentQuestion?.type === 'COMPREHENSIVE' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* 题干展示区 */}
+          <div style={{ padding: '20px', background: '#242424', borderRadius: '12px', borderLeft: '4px solid #9b59b6', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#9b59b6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '20px' }}>🛠️</span> 工程实战沙盘
+            </h3>
+            <div style={{ color: '#ddd', lineHeight: '1.8', fontSize: '15px' }}>{currentQuestion.prompt}</div>
+          </div>
+
+          {/* 工作台主网格 */}
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'stretch' }}>
+            
+            {/* 左侧：主答题区 (包含公式输入器) */}
+            <div style={{ flex: 2, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ background: '#1e1e1e', border: '1px solid #444', borderRadius: '12px', padding: '15px', display: 'flex', flexDirection: 'column', flexGrow: 1, boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ color: '#aaa', fontWeight: 'bold', fontSize: '14px' }}>📝 分析与计算论证过程</span>
+                  <button onClick={() => {
+                      const val = compMfInstanceRef.current?.value;
+                      if (val) setCompText(prev => prev + ` \\(${val}\\) `);
+                  }} style={{ background: 'rgba(28, 176, 246, 0.15)', color: '#1cb0f6', border: '1px solid #1cb0f6', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', transition: 'all 0.2s' }}>
+                    ⬇️ 插入公式至正文
+                  </button>
+                </div>
+                {/* 挂载 MathLive */}
+                <div style={{ marginBottom: '12px' }} ref={compMathContainerRef}></div>
+                {/* 正文输入 */}
+                <textarea
+                  value={compText}
+                  onChange={e => setCompText(e.target.value)}
+                  placeholder="作为架构师，请在这里写下你的排查思路、推导过程和最终结论..."
+                  style={{ width: '100%', flexGrow: 1, minHeight: '220px', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '15px', boxSizing: 'border-box', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', lineHeight: '1.6' }}
+                  readOnly={isAnswered}
+                />
+              </div>
+            </div>
+
+            {/* 右侧：辅助工具栈 */}
+            <div style={{ flex: 1, minWidth: '260px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              
+              {/* 工具1：极客计算器 */}
+              <div style={{ background: '#2a2a2a', border: '1px solid #444', borderRadius: '12px', padding: '15px', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+                <div style={{ color: '#ffc800', fontWeight: 'bold', marginBottom: '12px', fontSize: '14px' }}>🧮 Cortex-JS 极客计算器</div>
+                <input 
+                  type="text" value={calcInput} 
+                  onChange={e => setCalcInput(e.target.value)} 
+                  onKeyDown={e => e.key === 'Enter' && handleCalculate()} 
+                  placeholder="表达式，如: 12 / (10 + 2)" 
+                  style={{ width: '100%', background: '#111', border: '1px solid #555', color: '#fff', padding: '10px', borderRadius: '6px', boxSizing: 'border-box', marginBottom: '10px', fontFamily: 'monospace', fontSize: '14px' }} 
+                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={handleCalculate} style={{ flex: 1, background: '#444', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px', cursor: 'pointer', fontWeight: 'bold' }}>= 计算</button>
+                  <div style={{ flex: 2, background: '#0a0a0a', border: '1px inset #222', color: '#58cc02', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', overflowX: 'auto', fontFamily: 'monospace', fontSize: '16px', fontWeight: 'bold' }}>
+                    {calcResult || '0.00'}
+                  </div>
+                </div>
+              </div>
+
+              {/* 工具2：持久化备忘录 */}
+              <div style={{ background: '#2a2a2a', border: '1px solid #444', borderRadius: '12px', padding: '15px', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+                <div style={{ color: '#1cb0f6', fontWeight: 'bold', marginBottom: '12px', fontSize: '14px' }}>📌 跨题备忘录 (LocalStorage)</div>
+                <textarea 
+                  value={memoText} 
+                  onChange={e => setMemoText(e.target.value)} 
+                  placeholder="随手记下关键数据、中间变量或灵感，刷新网页也不会丢失..." 
+                  style={{ width: '100%', flexGrow: 1, minHeight: '120px', background: '#111', color: '#ffc800', border: '1px solid #555', borderRadius: '6px', padding: '12px', boxSizing: 'border-box', fontFamily: 'monospace', fontSize: '13px', resize: 'vertical', lineHeight: '1.5' }} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================== */}
+          {/* ⚖️ 薛定谔的仲裁庭 (双核提交区) */}
+          {/* ========================================== */}
+          {!isAnswered && (
+            <div style={{ display: 'flex', gap: '15px', marginTop: '10px', flexWrap: 'wrap', flexDirection: 'column' }}>
+              
+              {/* 操作按钮区 */}
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                <button onClick={() => {
+                  if (!compText.trim()) return alert("写点分析过程吧，工程师！");
+                  
+                  // === 算法 Core 1: 本地关键词正则扫描 ===
+                  let score = 0;
+                  let hitWords: string[] = [];
+                  const keywords = currentQuestion.keywords || [];
+                  
+                  if (keywords.length > 0) {
+                    keywords.forEach((kw: string) => {
+                      const regex = new RegExp(kw, 'i');
+                      if (regex.test(compText)) { score += (100 / keywords.length); hitWords.push(kw); }
+                    });
+                    score = Math.min(100, Math.round(score));
+                  } else {
+                    score = compText.length > 50 ? 100 : 60;
+                  }
+                  
+                  const isPass = score >= 60;
+                  const feedback = `🔍 【本地正则仲裁庭】扫描完毕\n\n得分: ${score} / 100\n命中核心概念: ${hitWords.length ? hitWords.join(' | ') : '无'}\n\n${isPass ? '✅ 逻辑链完整，允许通关！' : '❌ 关键知识点缺失，再想想！'}`;
+                  
+                  if (window.confirm(feedback + "\n\n是否接受此得分并提交答卷？")) { submitAnswer(isPass); }
+                }} disabled={isCallingAI} style={{ flex: 1, minWidth: '200px', padding: '16px', borderRadius: '12px', background: '#58cc02', color: '#fff', border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: isCallingAI ? 'not-allowed' : 'pointer', boxShadow: '0 4px 0 #46a302', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', opacity: isCallingAI ? 0.5 : 1 }}>
+                  <span>🔍 本地算法扫描</span><span style={{ background: '#fff', color: '#58cc02', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>极速</span>
+                </button>
+                
+                <button onClick={async () => {
+                  if (!llmKey || !llmUrl) { alert("⚠️ 请先在主菜单的【📚 存档库与云端】中配置 AI 引擎的 URL 和 API Key！"); return; }
+                  if (!compText.trim()) { alert("写点分析过程吧，不然 AI 会直接给你 0 分的！"); return; }
+                  
+                  setIsCallingAI(true);
+                  setAiFeedback(null);
+                  
+                  try {
+                    // === 算法 Core 2: 赛博老专家 (LLM Scorer) 极严苛 Prompt ===
+                    const sysPrompt = `你是一个极其严苛、经验丰富的硬件架构师。正在审查一名初级硬件工程师（用户）对工程故障的综合分析报告。
+                    【当前题目】: ${currentQuestion.prompt}
+                    【绝对标准答案】: ${Array.isArray(currentQuestion.answer) ? currentQuestion.answer.join(' ') : currentQuestion.answer}
+                    【深度解析参考】: ${currentQuestion.explanation || '无'}
+                    
+                    你的任务：基于上述绝对标准，审查用户提交的分析文本。
+                    要求：
+                    1. 检查其逻辑是否闭环，计算是否准确，是否踩中了核心痛点。
+                    2. 语气要像资深技术总监：犀利、专业、一针见血。对于致命的常识错误要狠狠指出。
+                    3. 你必须严格返回一个合法的 JSON 对象，不要输出任何额外的 markdown 标记（如 \`\`\`json ），格式如下：
+                    {
+                      "score": <0到100的整数，60分及格>,
+                      "feedback": "<一段不少于50字的深度技术点评>"
+                    }`;
+
+                    const response = await fetch(llmUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${llmKey}` },
+                      body: JSON.stringify({
+                        model: llmModel,
+                        messages: [
+                          { role: 'system', content: sysPrompt },
+                          { role: 'user', content: `我的排查报告：\n${compText}` }
+                        ],
+                        temperature: 0.1
+                      })
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                    
+                    const data = await response.json();
+                    let rawContent = data.choices[0].message.content;
+                    // 清理可能带有 ```json 的 markdown 格式
+                    rawContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const parsed = JSON.parse(rawContent);
+                    
+                    if (parsed.score !== undefined && parsed.feedback) {
+                      setAiFeedback({ score: parsed.score, feedback: parsed.feedback });
+                      playSound('snap');
+                    } else {
+                      throw new Error("大模型返回的数据格式不符合要求");
+                    }
+                  } catch (err: any) {
+                    console.error(err);
+                    alert("❌ 呼叫 AI 架构师失败，请检查 API 配置或网络环境。\n错误信息：" + err.message);
+                  } finally {
+                    setIsCallingAI(false);
+                  }
+                }} disabled={isCallingAI} style={{ flex: 1, minWidth: '200px', padding: '16px', borderRadius: '12px', background: '#9b59b6', color: '#fff', border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: isCallingAI ? 'not-allowed' : 'pointer', boxShadow: '0 4px 0 #732d91', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                  <span>{isCallingAI ? '📡 正在连接高维意识...' : '🤖 呼叫 AI 架构师审查'}</span><span style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>耗时</span>
+                </button>
+              </div>
+
+              {/* AI 审判结果反馈面板 */}
+              {aiFeedback && (
+                <div style={{ marginTop: '10px', background: '#1a1a1a', border: `2px solid ${aiFeedback.score >= 60 ? '#58cc02' : '#ff4b4b'}`, borderRadius: '12px', padding: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', animation: 'pulseGlow 1s ease-out' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '15px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: aiFeedback.score >= 60 ? '#58cc02' : '#ff4b4b' }}>
+                      👨‍💻 架构师阅卷结果：{aiFeedback.score >= 60 ? 'PASS (通过)' : 'FAIL (打回重做)'}
+                    </div>
+                    <div style={{ fontSize: '32px', fontWeight: '900', color: aiFeedback.score >= 60 ? '#58cc02' : '#ff4b4b', textShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
+                      {aiFeedback.score} <span style={{fontSize: '16px'}}>分</span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ color: '#ddd', lineHeight: '1.7', fontSize: '15px', background: '#222', padding: '15px', borderRadius: '8px', fontStyle: 'italic', borderLeft: '4px solid #555' }}>
+                    “ {aiFeedback.feedback} ”
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+                    <button onClick={() => submitAnswer(aiFeedback.score >= 60)} style={{ flex: 2, padding: '14px', borderRadius: '8px', background: aiFeedback.score >= 60 ? '#58cc02' : '#ff4b4b', color: '#fff', border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: `0 4px 0 ${aiFeedback.score >= 60 ? '#46a302' : '#cc3c3c'}` }}>
+                      {aiFeedback.score >= 60 ? '✅ 接受得分并通关！' : '🩸 愿赌服输，接受挂科扣血'}
+                    </button>
+                    <button onClick={() => setAiFeedback(null)} style={{ flex: 1, padding: '14px', borderRadius: '8px', background: '#444', color: '#fff', border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
+                      取消，我再改改
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : 
+
+      currentQuestion?.type === 'MCQ' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {currentQuestion?.options.map((option: string, index: number) => {
             const isSelected = selectedOptions.includes(option);
@@ -885,7 +1274,7 @@ function App() {
               <h2 style={{ margin: 0, color: isCorrect ? '#58cc02' : '#ff4b4b', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {isCorrect ? (currentQuestion?.type === 'INTERACTIVE_EDA' ? '✔ 网表拓扑完美匹配！' : '✔ 完全正确！') : (currentQuestion?.type === 'INTERACTIVE_EDA' ? '✖ 短路/开路警报！连线错误。' : '✖ 答错了')}
               </h2>
-              {!isCorrect && currentQuestion.type !== 'INTERACTIVE_EDA' && <p style={{ margin: '8px 0 0 0', color: '#ff4b4b', fontWeight: 'bold' }}>标准答案：<span style={{background: '#fff', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '5px'}}>{currentQuestion.answer}</span></p>}
+              {!isCorrect && currentQuestion.type !== 'INTERACTIVE_EDA' && <p style={{ margin: '8px 0 0 0', color: '#ff4b4b', fontWeight: 'bold', lineHeight: '1.5' }}>标准答案：<br/><span style={{background: '#fff', color: '#000', padding: '4px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '5px'}}>{Array.isArray(currentQuestion.answer) ? currentQuestion.answer.join(' ➔ ') : currentQuestion.answer}</span></p>}
             </div>
             <button onClick={handleNext} style={{ backgroundColor: isCorrect ? '#58cc02' : '#ff4b4b', color: 'white', border: 'none', padding: '14px 28px', fontSize: '18px', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', boxShadow: isCorrect ? '0 4px 0 #46a302' : '0 4px 0 #cc3c3c' }}>继续</button>
           </div>

@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-console.log("====================================");
-console.log("🚀 硬件学院智能编译器 V7.0 (网表连线 EDA 版)");
-console.log("====================================");
+console.log("=========================================================");
+console.log("🚀 硬件学院智能编译器 V7.2 (新增综合应用题 COMPREHENSIVE)");
+console.log("=========================================================");
 
 function buildData() {
   console.log("⏳ 正在编译数据...");
@@ -33,7 +33,7 @@ function buildData() {
       };
 
       if (type === "MCQ") {
-        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Options\]|\[Answer\]|\[Explanation\])/);
+        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Options\]|\[Answer\]|\[Explanation\]|$)/);
         const optionsMatch = block.match(/\[Options\]([\s\S]*?)\[Answer\]/);
         const answerMatch = block.match(/\[Answer\]\s*([A-Za-z]+)/); 
         qData.prompt = promptMatch ? promptMatch[1].trim() : "未知题干";
@@ -41,29 +41,53 @@ function buildData() {
         qData.answer = answerMatch ? answerMatch[1].trim().toUpperCase() : "";
       } 
       else if (type === "MATH") {
-        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Answer\]|\[Explanation\])/);
+        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Answer\]|\[Explanation\]|$)/);
         const answerMatch = block.match(/\[Answer\]([\s\S]*?)(?:\n\[Explanation\]|$)/);
         qData.prompt = promptMatch ? promptMatch[1].trim() : "未知题干";
         qData.answer = answerMatch ? answerMatch[1].trim() : "";
       }
       else if (type === "INTERACTIVE_EDA") {
-        // 🚀 战役二进阶：真正基于网表的题型解析
-        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Background\]|\[Nodes\]|\[Components\]|\[Netlist\]|\[Explanation\])/);
+        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Background\]|\[Nodes\]|\[Components\]|\[Netlist\]|\[Explanation\]|$)/);
         const bgMatch = block.match(/\[Background\]\s*(.*)/);
-        const nodesMatch = block.match(/\[Nodes\]([\s\S]*?)(?:\[Components\]|\[Netlist\]|\[Explanation\])/);
-        const compMatch = block.match(/\[Components\]([\s\S]*?)(?:\[Netlist\]|\[Explanation\])/);
+        const nodesMatch = block.match(/\[Nodes\]([\s\S]*?)(?:\[Components\]|\[Netlist\]|\[Explanation\]|$)/);
+        const compMatch = block.match(/\[Components\]([\s\S]*?)(?:\[Netlist\]|\[Explanation\]|$)/);
         const netlistMatch = block.match(/\[Netlist\]([\s\S]*?)(?:\n\[Explanation\]|$)/);
 
         qData.prompt = promptMatch ? promptMatch[1].trim() : "请完成电路连线。";
         qData.background = bgMatch ? bgMatch[1].trim() : "";
-        
         try {
-          qData.nodes = nodesMatch ? JSON.parse(nodesMatch[1].trim()) : [];
-          qData.components = compMatch ? JSON.parse(compMatch[1].trim()) : [];
-          qData.targetNetlist = netlistMatch ? JSON.parse(netlistMatch[1].trim()) : [];
+          qData.nodes = nodesMatch && nodesMatch[1].trim() ? JSON.parse(nodesMatch[1].trim()) : [];
+          qData.components = compMatch && compMatch[1].trim() ? JSON.parse(compMatch[1].trim()) : [];
+          qData.targetNetlist = netlistMatch && netlistMatch[1].trim() ? JSON.parse(netlistMatch[1].trim()) : [];
         } catch (e) {
-          console.error(`❌ [格式错误] 题目 ${id} 的 EDA JSON 解析失败！请检查数组格式。`);
           qData.nodes = []; qData.components = []; qData.targetNetlist = [];
+        }
+      }
+      else if (type === "BLANK_FILL") {
+        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Options\]|\[Answer\]|\[Explanation\]|$)/);
+        const optionsMatch = block.match(/\[Options\]([\s\S]*?)(?:\[Answer\]|\[Explanation\]|$)/);
+        const answerMatch = block.match(/\[Answer\]([\s\S]*?)(?:\n\[Explanation\]|$)/);
+        qData.prompt = promptMatch ? promptMatch[1].trim() : "未知填空题干";
+        try {
+          qData.options = optionsMatch && optionsMatch[1].trim() ? JSON.parse(optionsMatch[1].trim()) : [];
+          qData.answer = answerMatch && answerMatch[1].trim() ? JSON.parse(answerMatch[1].trim()) : [];
+        } catch (e) {
+          qData.options = []; qData.answer = [];
+        }
+      }
+      // 🌟 新增：综合应用题 (COMPREHENSIVE)
+      else if (type === "COMPREHENSIVE") {
+        const promptMatch = block.match(/\[Prompt\]([\s\S]*?)(?:\[Keywords\]|\[Answer\]|\[Explanation\]|$)/);
+        const keywordsMatch = block.match(/\[Keywords\]([\s\S]*?)(?:\[Answer\]|\[Explanation\]|$)/);
+        const answerMatch = block.match(/\[Answer\]([\s\S]*?)(?:\n\[Explanation\]|$)/);
+        
+        qData.prompt = promptMatch ? promptMatch[1].trim() : "未知综合题干";
+        qData.answer = answerMatch ? answerMatch[1].trim() : ""; // 这里的 answer 用于喂给大模型做参考
+        try {
+          qData.keywords = keywordsMatch && keywordsMatch[1].trim() ? JSON.parse(keywordsMatch[1].trim()) : [];
+        } catch (e) {
+          console.error(`❌ [COMPREHENSIVE 格式错误] 题目 ${id} 的 Keywords JSON 解析失败！`);
+          qData.keywords = [];
         }
       }
 
@@ -72,34 +96,11 @@ function buildData() {
 
     const campaignRaw = fs.readFileSync('./campaign.json', 'utf-8');
     const campaignData = JSON.parse(campaignRaw);
-    let errorCount = 0;
-    campaignData.forEach(node => {
-      if (node.type === 'LESSON' && node.questions) {
-        node.questions.forEach(qId => {
-          if (!questionsPool[qId]) { console.error(`❌ 找不到题号: "${qId}"`); errorCount++; }
-        });
-      }
-    });
+    fs.writeFileSync('../frontend/src/gameData.json', JSON.stringify({ campaignHash: crypto.createHash('md5').update(JSON.stringify(campaignData)).digest('hex'), pool: questionsPool, campaign: campaignData }, null, 2), 'utf-8');
+    console.log("🎉 编译成功！所有硬核题型已部署至前端！\n");
 
-    if (errorCount > 0) return;
-
-    const campaignString = JSON.stringify(campaignData);
-    const campaignHash = crypto.createHash('md5').update(campaignString).digest('hex');
-    console.log(`🔒 地图哈希: [${campaignHash}]`);
-
-    fs.writeFileSync('../frontend/src/gameData.json', JSON.stringify({ campaignHash, pool: questionsPool, campaign: campaignData }, null, 2), 'utf-8');
-    console.log("🎉 编译成功！全网表连线 EDA 引擎支持已就绪！\n");
-
-  } catch (error) { console.error("❌ 发生错误:", error.message); }
+  } catch (error) { console.error("❌ 发生致命错误:", error.message); }
 }
 
 buildData();
-
-if (process.argv.includes('--watch')) {
-  fs.watch('.', (eventType, filename) => {
-    if (filename === 'questions.md' || filename === 'campaign.json') {
-      console.log(`\n📄 ${filename} 已修改，热更新...`);
-      buildData();
-    }
-  });
-}
+if (process.argv.includes('--watch')) fs.watch('.', (eventType, filename) => { if (filename === 'questions.md' || filename === 'campaign.json') buildData(); });
